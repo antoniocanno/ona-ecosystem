@@ -1,0 +1,63 @@
+﻿@using Ona.Auth.Application.Models
+@model EmailVerificationModel
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificação de E-mail</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f6f8; color: #51545E; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f6f8; padding-bottom: 40px; }
+        .container { max-width: 550px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        
+        /* Brand Header */
+        .header { background-color: #E85D34; padding: 25px; text-align: center; }
+        .header h1 { margin: 0; color: #ffffff; font-size: 24px; letter-spacing: 1px; text-transform: uppercase; }
+        
+        /* Content */
+        .content { padding: 40px 35px; }
+        h2 { margin-top: 0; color: #333333; font-size: 22px; }
+        p { line-height: 1.6; margin-bottom: 20px; font-size: 16px; }
+        
+        /* Button */
+        .btn-container { text-align: center; margin: 30px 0; }
+        a.button { display: inline-block; padding: 14px 32px; background-color: #E85D34; color: #ffffff; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 16px; transition: background-color 0.3s; }
+        a.button:hover { background-color: #D14620; }
+        
+        /* Footer & Notes */
+        .note { font-size: 14px; color: #85878E; margin-top: 30px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
+        .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #9EA0A5; padding: 0 20px; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <br>
+        <div class="container">
+            <div class="header">
+                <h1>ONA</h1>
+            </div>
+            <div class="content">
+                <h2>Seja bem-vindo(a), @Model.UserName!</h2>
+                
+                <p>Estamos muito felizes em ter você na <strong>@Model.CompanyName</strong>. Falta muito pouco para começarmos.</p>
+                <p>Por favor, confirme seu endereço de e-mail clicando no botão abaixo para ativar sua conta:</p>
+
+                <div class="btn-container">
+                    <a href="@Model.VerificationUrl" class="button">Confirmar meu e-mail</a>
+                </div>
+
+                <div class="note">
+                    Link válido por @Model.ExpirationHours horas. <br>
+                    Se você não criou esta conta, por favor, desconsidere este e-mail.
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Enviado com cuidado pela equipe <strong>@Model.CompanyName</strong>.</p>
+            <p>Dúvidas? @Model.SupportEmail</p>
+        </div>
+    </div>
+</body>
+</html>
