@@ -28,12 +28,13 @@ namespace Ona.Auth.Infrastructure.Services
 
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, user.Id),
+                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new(JwtRegisteredClaimNames.Email, user.Email ?? ""),
                 new(JwtRegisteredClaimNames.Name, user.FullName),
                 new("email_verified", user.EmailConfirmed.ToString()),
                 new("auth_method", string.IsNullOrEmpty(user.GoogleId) ? "email_password" : "google_oauth"),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new("tenant", user.TenantId.ToString())
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));

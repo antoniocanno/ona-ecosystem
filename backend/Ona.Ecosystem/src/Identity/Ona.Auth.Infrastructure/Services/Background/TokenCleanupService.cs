@@ -1,16 +1,21 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Ona.Auth.Application.Interfaces.Repositories;
 
 namespace Ona.Auth.Infrastructure.Services.Background
 {
     public class TokenCleanupService : BackgroundService
     {
+        private readonly ILogger<TokenCleanupService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly TimeSpan _cleanupInterval = TimeSpan.FromHours(24);
 
-        public TokenCleanupService(IServiceProvider serviceProvider)
+        public TokenCleanupService(
+            ILogger<TokenCleanupService> logger,
+            IServiceProvider serviceProvider)
         {
+            _logger = logger;
             _serviceProvider = serviceProvider;
         }
 
@@ -33,7 +38,7 @@ namespace Ona.Auth.Infrastructure.Services.Background
                 }
                 catch (Exception ex)
                 {
-                    // Logar a exceção. 
+                    _logger.LogError(ex, "Falha ao limpar tokens expirados");
                 }
 
                 await Task.Delay(_cleanupInterval, stoppingToken);

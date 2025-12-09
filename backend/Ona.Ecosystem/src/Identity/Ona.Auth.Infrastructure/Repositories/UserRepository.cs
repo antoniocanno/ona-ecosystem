@@ -2,27 +2,28 @@
 using Ona.Auth.Application.Interfaces.Repositories;
 using Ona.Auth.Domain.Entities;
 using Ona.Auth.Infrastructure.Data;
+using Ona.Infrastructure.Shared.Repositories;
 
 namespace Ona.Auth.Infrastructure.Repositories
 {
-    public class UserRepository : BaseRepository<ApplicationUser>, IUserRepository
+    public class UserRepository : BaseRepository<AuthDbContext, ApplicationUser>, IUserRepository
     {
         public UserRepository(AuthDbContext authDbContext)
             : base(authDbContext) { }
 
         public async Task<ApplicationUser?> GetByEmailAsync(string email)
         {
-            return await DbSet.FirstOrDefaultAsync(u => u.Email == email);
+            return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
         }
 
         public async Task<ApplicationUser?> GetByGoogleIdAsync(string googleId)
         {
-            return await DbSet.FirstOrDefaultAsync(u => u.GoogleId == googleId);
+            return await _dbSet.FirstOrDefaultAsync(u => u.GoogleId == googleId);
         }
 
         public async Task<ApplicationUser?> GetByIdAsync(string id)
         {
-            return await DbSet.FindAsync(id);
+            return await _dbSet.FindAsync(id);
         }
     }
 }

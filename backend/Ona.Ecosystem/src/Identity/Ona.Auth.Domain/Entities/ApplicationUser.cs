@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Identity;
+using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Auth.Domain.Entities
 {
-    public class ApplicationUser : IdentityUser
+    public class ApplicationUser : IdentityUser<Guid>, ITenantEntity
     {
         public string FullName { get; set; } = string.Empty;
         public string? GoogleId { get; set; }
@@ -10,25 +11,27 @@ namespace Ona.Auth.Domain.Entities
         public string? LogoUrl { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public string ColorTheme { get; set; } = string.Empty;
+        public string BusinessName { get; set; } = string.Empty;
+        public Guid TenantId { get; set; }
 
         public void MarkEmailAsVerified()
         {
-
             EmailConfirmedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
             EmailConfirmed = true;
+            SetUpdatedAt();
         }
 
         public void Unlock()
         {
             LockoutEnd = null;
-            UpdatedAt = DateTime.UtcNow;
+            SetUpdatedAt();
         }
 
         public void Lock(DateTime lockoutEnd)
         {
             LockoutEnd = lockoutEnd;
-            UpdatedAt = DateTime.UtcNow;
+            SetUpdatedAt();
         }
 
         public bool HasEmail(string email)
@@ -37,8 +40,10 @@ namespace Ona.Auth.Domain.Entities
         public void SetLogoUrl(string logoUrl)
         {
             LogoUrl = logoUrl;
-            UpdatedAt = DateTime.UtcNow;
+            SetUpdatedAt();
         }
+
+        private void SetUpdatedAt() => UpdatedAt = DateTime.UtcNow;
     }
 }
 

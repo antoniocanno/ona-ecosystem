@@ -7,7 +7,7 @@ using Ona.Auth.Application.DTOs.Responses;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Settings;
 using Ona.Auth.Domain.Entities;
-using Ona.Auth.Domain.Exceptions;
+using Ona.Core.Common.Exceptions;
 
 namespace Ona.Auth.Application.Services
 {
@@ -189,7 +189,7 @@ namespace Ona.Auth.Application.Services
             string counterKey = $"resend_verification_attempts:{email}";
             long currentAttempts = await _cache.IncrementAsync(counterKey, TimeSpan.FromHours(1));
 
-            if (currentAttempts >= _securitySettings.AttemptSettings.MaxAttemptsPerHour)
+            if (currentAttempts >= _securitySettings.AttemptSettings!.MaxAttemptsPerHour)
                 throw new ValidationException("Muitas tentativas. Tente novamente em 1 hora.");
 
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -205,11 +205,11 @@ namespace Ona.Auth.Application.Services
             await _signInManager.SignOutAsync();
         }
 
-        public async Task LogoutAllAsync(string userId)
+        public async Task LogoutAllAsync(Guid userId)
         {
             await _refreshTokenService.RevokeAllUserTokensAsync(userId);
 
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId.ToString());
             if (user != null)
                 await _userManager.UpdateSecurityStampAsync(user);
         }

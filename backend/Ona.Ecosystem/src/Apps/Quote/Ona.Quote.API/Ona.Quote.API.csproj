@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Orchestration\Ona.ServiceDefaults\Ona.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\Ona.Quote.Application\Ona.Quote.Application.csproj" />
+    <ProjectReference Include="..\Ona.Quote.Domain\Ona.Quote.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

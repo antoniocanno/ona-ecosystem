@@ -4,7 +4,7 @@ namespace Ona.Auth.Application.Interfaces.Services
 {
     public interface IUserService
     {
-        Task<ApplicationUser?> GetByIdAsync(string id);
+        Task<ApplicationUser?> GetByIdAsync(Guid id);
         Task<ApplicationUser?> GetByEmailAsync(string email);
         Task<ApplicationUser?> GetByGoogleIdAsync(string googleId);
         Task<ApplicationUser> CreateAsync(ApplicationUser user);

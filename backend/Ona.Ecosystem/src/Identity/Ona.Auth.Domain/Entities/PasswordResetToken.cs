@@ -2,7 +2,6 @@
 
 namespace Ona.Auth.Domain.Entities
 {
-    [Table("PasswordResetTokens")]
     public class PasswordResetToken : BaseToken
     {
         public PasswordResetToken()

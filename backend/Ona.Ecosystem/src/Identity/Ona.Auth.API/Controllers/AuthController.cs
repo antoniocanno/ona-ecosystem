@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Ona.Auth.API.Attributes;
-using Ona.Auth.API.Extensions;
 using Ona.Auth.Application.DTOs.Request;
 using Ona.Auth.Application.Interfaces.Services;
+using Ona.Core.Common.Extensions;
+using Ona.ServiceDefaults.ApiExtensions;
+using Ona.ServiceDefaults.Attributes;
 
 namespace Ona.Auth.API.Controllers
 {
@@ -36,7 +37,7 @@ namespace Ona.Auth.API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var authResponse = await _services.LoginAsync(request);
-            SetRefreshTokenCookie(authResponse.RefreshToken, authResponse.RefreshTokenExpires);
+            SetRefreshTokenCookie(authResponse!.RefreshToken, authResponse.RefreshTokenExpires);
             return Ok(authResponse);
         }
 
@@ -44,7 +45,7 @@ namespace Ona.Auth.API.Controllers
         public async Task<IActionResult> GoogleLogin([FromBody] GoogleLoginRequest request)
         {
             var authResponse = await _services.GoogleLoginAsync(request);
-            SetRefreshTokenCookie(authResponse.RefreshToken, authResponse.RefreshTokenExpires);
+            SetRefreshTokenCookie(authResponse!.RefreshToken, authResponse.RefreshTokenExpires);
             return Ok(authResponse);
         }
 
@@ -90,7 +91,7 @@ namespace Ona.Auth.API.Controllers
         [Authorize]
         public async Task<IActionResult> LogoutAll()
         {
-            var userId = User.GetUserId();
+            var userId = User.GetUserId().ToGuid();
             await _services.LogoutAllAsync(userId);
             DeleteRefreshTokenCookie();
             return Ok();

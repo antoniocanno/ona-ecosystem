@@ -9,6 +9,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\..\Shared\Ona.Core\Ona.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\Ona.Domain.Shared\Ona.Domain.Shared.csproj" />
   </ItemGroup>
 
 </Project>

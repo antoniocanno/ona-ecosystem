@@ -4,7 +4,7 @@ using Ona.Auth.Application.DTOs.Responses;
 using Ona.Auth.Application.Interfaces.Repositories;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Domain.Entities;
-using Ona.Auth.Domain.Exceptions;
+using Ona.Core.Common.Exceptions;
 
 namespace Ona.Auth.Application.Services
 {
@@ -18,7 +18,7 @@ namespace Ona.Auth.Application.Services
             _repository = repository;
         }
 
-        public async Task<ApplicationUser?> GetByIdAsync(string id)
+        public async Task<ApplicationUser?> GetByIdAsync(Guid id)
         {
             return await _repository.GetByIdAsync(id);
         }
@@ -83,14 +83,14 @@ namespace Ona.Auth.Application.Services
 
         #region App Services
 
-        public async Task<UserDto> GetDtoByIdAsync(string id)
+        public async Task<UserDto> GetDtoByIdAsync(Guid id)
         {
             var user = await _repository.GetByIdAsync(id);
             ValidateUser(user);
             return user!.Adapt<UserDto>();
         }
 
-        public async Task<UserDto> UpdateAsync(string id, UserUpdateRequest request)
+        public async Task<UserDto> UpdateAsync(Guid id, UserUpdateRequest request)
         {
             var user = await _repository.GetByIdAsync(id);
 

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Settings;
 using Ona.Auth.Domain.Entities;
-using Ona.Auth.Domain.Exceptions;
+using Ona.Core.Common.Exceptions;
 
 namespace Ona.Auth.Application.Services
 {
@@ -37,7 +37,7 @@ namespace Ona.Auth.Application.Services
 
             long currentAttempts = await _cache.IncrementAsync(counterKey, TimeSpan.FromHours(1));
 
-            if (currentAttempts >= _securitySettings.AttemptSettings.MaxAttemptsPerHour)
+            if (currentAttempts >= _securitySettings.AttemptSettings!.MaxAttemptsPerHour)
                 throw new ValidationException("Muitas tentativas. Tente novamente em 1 hora.");
 
             string token = await _userManager.GeneratePasswordResetTokenAsync(user);

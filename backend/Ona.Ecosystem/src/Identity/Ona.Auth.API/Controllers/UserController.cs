@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Ona.Auth.API.Extensions;
 using Ona.Auth.Application.DTOs.Request;
 using Ona.Auth.Application.Interfaces.Services;
+using Ona.Core.Common.Extensions;
+using Ona.ServiceDefaults.ApiExtensions;
 
 namespace Ona.Auth.API.Controllers
 {
@@ -21,7 +22,7 @@ namespace Ona.Auth.API.Controllers
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
-            var userId = User.GetUserId();
+            var userId = User.GetUserId().ToGuid();
             var user = await _userAppServices.GetDtoByIdAsync(userId);
             return Ok(user);
         }
@@ -30,7 +31,7 @@ namespace Ona.Auth.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateCurrentUser(UserUpdateRequest request)
         {
-            var userId = User.GetUserId();
+            var userId = User.GetUserId().ToGuid();
             var user = await _userAppServices.UpdateAsync(userId, request);
             return Ok(user);
         }

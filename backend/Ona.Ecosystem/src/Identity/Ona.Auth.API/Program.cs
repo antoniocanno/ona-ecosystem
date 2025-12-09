@@ -1,6 +1,5 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
-using Ona.Auth.API.Extensions;
 using Ona.Auth.Application.Extensions;
 using Ona.Auth.Infrastructure.Data;
 using Ona.Auth.Infrastructure.Extensions;
@@ -31,14 +30,9 @@ namespace Ona.Auth.API
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
-            builder.Services.AddSwaggerDocumentation();
 
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddApplication(builder.Configuration);
-
-            builder.Services.AddJwtAuthentication(builder.Configuration);
-
-            builder.Host.UseSerilogConfiguration();
 
             var app = builder.Build();
 
@@ -53,9 +47,7 @@ namespace Ona.Auth.API
                 app.UseSwaggerUI();
             }
 
-            app.UseCustomErrorHandling();
-            app.UseEmailVerificationMiddleware();
-            app.UseRateLimitMiddleware();
+            app.AddServiceDefaults();
 
             app.UseHttpsRedirection();
 

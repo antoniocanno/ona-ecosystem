@@ -22,7 +22,7 @@ namespace Ona.Auth.Application.Services
             _securitySettings = securitySettings.Value;
         }
 
-        public async Task<RefreshToken> GenerateRefreshTokenAsync(string userId)
+        public async Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId)
         {
             var activeTokens = await GetUserTokenCountAsync(userId);
             if (activeTokens >= _securitySettings.MaximumRefreshTokensPerUser)

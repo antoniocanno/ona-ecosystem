@@ -7,7 +7,7 @@ namespace Ona.Auth.Application.Interfaces.Repositories
         Task<TEntity> CreateAsync(TEntity entity);
         TEntity Update(TEntity entity);
         void Remove(TEntity entity);
-        Task<TEntity?> GetByIdAsync(int id);
+        Task<TEntity?> GetByIdAsync(Guid id);
         Task<IEnumerable<TEntity>> GetAllAsync();
         Task<IEnumerable<TEntity>> FindAsync(Expression<Func<TEntity, bool>> filter);
         Task<int> CountAsync(Expression<Func<TEntity, bool>>? predicate = null);
