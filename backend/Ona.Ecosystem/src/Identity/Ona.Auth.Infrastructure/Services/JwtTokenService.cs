@@ -19,8 +19,9 @@ namespace Ona.Auth.Infrastructure.Services
             _jwtSettings = jwtSettings.Value;
         }
 
-        public string GenerateAccessToken(ApplicationUser user)
+        public string GenerateAccessToken(ApplicationUser user, IList<string> roles)
         {
+
             if (string.IsNullOrEmpty(_jwtSettings.Secret) || string.IsNullOrEmpty(_jwtSettings.Issuer) || string.IsNullOrEmpty(_jwtSettings.Audience))
             {
                 throw new ValidationException("Configurações JWT não foram carregadas corretamente. Verifique appsettings.json.");
@@ -36,6 +37,12 @@ namespace Ona.Auth.Infrastructure.Services
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new("tenant", user.TenantId.ToString())
             };
+
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

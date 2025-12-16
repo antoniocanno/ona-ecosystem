@@ -8,8 +8,8 @@ using Ona.ServiceDefaults.Attributes;
 
 namespace Ona.Auth.API.Controllers
 {
+    [Route("api/[controller]")]
     [ApiController]
-    [Route("api/auth")]
     [AllowWithoutEmailVerification]
     public class AuthController : ControllerBase
     {
@@ -51,7 +51,7 @@ namespace Ona.Auth.API.Controllers
 
         [HttpPost("verify-email")]
         [AllowWithoutEmailVerification]
-        public async Task<IActionResult> VerifyEmail([FromQuery] VerifyEmailRequest request)
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
         {
             await _services.VerifyEmailAsync(request);
             return Ok();

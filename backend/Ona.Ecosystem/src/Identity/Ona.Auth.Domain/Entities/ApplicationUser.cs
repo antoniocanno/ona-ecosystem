@@ -15,6 +15,8 @@ namespace Ona.Auth.Domain.Entities
         public string BusinessName { get; set; } = string.Empty;
         public Guid TenantId { get; set; }
 
+        public List<string?>? Roles { get; set; } = [];
+
         public void MarkEmailAsVerified()
         {
             EmailConfirmedAt = DateTime.UtcNow;
@@ -40,6 +42,12 @@ namespace Ona.Auth.Domain.Entities
         public void SetLogoUrl(string logoUrl)
         {
             LogoUrl = logoUrl;
+            SetUpdatedAt();
+        }
+
+        public void SetTenantId(Guid tenantId)
+        {
+            TenantId = tenantId;
             SetUpdatedAt();
         }
 

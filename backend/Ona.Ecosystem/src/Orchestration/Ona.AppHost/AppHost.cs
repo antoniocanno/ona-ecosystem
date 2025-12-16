@@ -1,6 +1,6 @@
 var builder = DistributedApplication.CreateBuilder(args);
 
-var jwtSecret = builder.AddParameter("JwtSecret", secret: true); 
+var jwtSecret = builder.AddParameter("JwtSecret", secret: true);
 var password = builder.AddParameter("pg-password", secret: true);
 
 var postgres = builder.AddPostgres("postgres", password: password)
@@ -9,23 +9,21 @@ var postgres = builder.AddPostgres("postgres", password: password)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var authDb = postgres.AddDatabase("auth-db");
-var quoteDb = postgres.AddDatabase("quote-db");
+var commitDb = postgres.AddDatabase("commit-db");
 
 var redis = builder.AddRedis("cache");
 
 var authApi = builder.AddProject<Projects.Ona_Auth_API>("ona-auth-api")
-                     .WithEnvironment("SSO:Secret", jwtSecret)
+                     .WithEnvironment("JwtSettings:Secret", jwtSecret)
                      .WithReference(authDb)
                      .WaitFor(postgres)
                      .WithReference(redis);
 
-var quoteApi = builder.AddProject<Projects.Ona_Quote_API>("ona-quote-api")
+var commitApi = builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
                        .WithReference(authApi)
-                       .WithEnvironment("SSO:Secret", jwtSecret)
-                       .WithReference(quoteDb)
+                       .WithEnvironment("JwtSettings:Secret", jwtSecret)
+                       .WithReference(commitDb)
                        .WaitFor(postgres)
                        .WithReference(redis);
-
-builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api");
 
 builder.Build().Run();

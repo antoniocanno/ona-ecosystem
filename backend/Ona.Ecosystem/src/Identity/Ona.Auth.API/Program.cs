@@ -1,11 +1,8 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Ona.Auth.API.Extensions;
 using Ona.Auth.Application.Extensions;
 using Ona.Auth.Infrastructure.Data;
 using Ona.Auth.Infrastructure.Extensions;
 using Ona.ServiceDefaults;
-using Polly;
-using Polly.Retry;
 
 namespace Ona.Auth.API
 {
@@ -40,7 +37,7 @@ namespace Ona.Auth.API
 
             if (app.Environment.IsDevelopment())
             {
-                await ApplyMigrationsAutomatically(app);
+                await app.ApplyDatabaseMigrationsAsync();
 
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
@@ -56,64 +53,6 @@ namespace Ona.Auth.API
             app.MapControllers();
 
             app.Run();
-        }
-
-        private static async Task ApplyMigrationsAutomatically(WebApplication app)
-        {
-            using var scope = app.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AuthDbContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-            var pipeline = new ResiliencePipelineBuilder()
-                .AddRetry(new RetryStrategyOptions
-                {
-                    MaxRetryAttempts = 10,
-                    Delay = TimeSpan.FromSeconds(2),
-                    BackoffType = DelayBackoffType.Constant,
-                    OnRetry = args =>
-                    {
-                        logger.LogWarning("Database unavailable. Retrying in 2s... (Attempt {AttemptNumber}/{MaxRetries})",
-                            args.AttemptNumber, 10);
-                        return ValueTask.CompletedTask;
-                    }
-                })
-                .Build();
-
-            try
-            {
-                await pipeline.ExecuteAsync(async cancellationToken =>
-                {
-                    logger.LogInformation("Checking database connectivity...");
-
-                    if (!await db.Database.CanConnectAsync(cancellationToken))
-                    {
-                        throw new Exception("Database connection failed (CanConnect returned false).");
-                    }
-
-                    var pendingMigrations = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
-
-                    if (pendingMigrations.Count == 0)
-                    {
-                        logger.LogInformation("Database is up to date. No migrations pending.");
-                        return;
-                    }
-
-                    logger.LogInformation("Found {Count} pending migration(s): {Migrations}",
-                        pendingMigrations.Count,
-                        string.Join(", ", pendingMigrations));
-
-                    logger.LogInformation("Applying migrations...");
-
-                    await db.Database.MigrateAsync(cancellationToken);
-
-                    logger.LogInformation("Migrations applied successfully!");
-                });
-            }
-            catch (Exception ex)
-            {
-                logger.LogCritical(ex, "Fatal error: Could not connect to the database or apply migrations after multiple attempts.");
-                throw;
-            }
         }
     }
 }

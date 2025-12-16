@@ -1,8 +1,8 @@
-﻿using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Ona.ServiceDefaults.ApiExtensions
 {
@@ -45,8 +45,8 @@ namespace Ona.ServiceDefaults.ApiExtensions
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            var secretKey = configuration["SSO:Secret"]
-                ?? throw new InvalidOperationException("SSO não configurado no appsettings.json");
+            var secretKey = configuration["JwtSettings:Secret"]
+                ?? throw new InvalidOperationException("JwtSettings não configurado no appsettings.json");
 
             var key = Encoding.ASCII.GetBytes(secretKey);
 
@@ -68,8 +68,8 @@ namespace Ona.ServiceDefaults.ApiExtensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
 
-                    ValidIssuer = configuration["SSO:Issuer"],
-                    ValidAudience = configuration["SSO:Audience"],
+                    ValidIssuer = configuration["JwtSettings:Issuer"],
+                    ValidAudience = configuration["JwtSettings:Audience"],
                 };
             });
 

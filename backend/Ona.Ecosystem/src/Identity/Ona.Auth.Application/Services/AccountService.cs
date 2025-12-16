@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Settings;
+using Ona.Auth.Domain.Constants;
 using Ona.Auth.Domain.Entities;
 using Ona.Core.Common.Exceptions;
 
@@ -38,7 +39,7 @@ namespace Ona.Auth.Application.Services
             long currentAttempts = await _cache.IncrementAsync(counterKey, TimeSpan.FromHours(1));
 
             if (currentAttempts >= _securitySettings.AttemptSettings!.MaxAttemptsPerHour)
-                throw new ValidationException("Muitas tentativas. Tente novamente em 1 hora.");
+                throw new ValidationException(AuthConstants.Errors.TooManyAttempts);
 
             string token = await _userManager.GeneratePasswordResetTokenAsync(user);
 
@@ -64,32 +65,32 @@ namespace Ona.Auth.Application.Services
             }
             catch
             {
-                throw new ValidationException("Token inválido.");
+                throw new ValidationException(AuthConstants.Errors.InvalidToken);
             }
 
             var user = await _userManager.FindByEmailAsync(email);
-            if (user == null) throw new ValidationException("Usuário não encontrado.");
+            if (user == null) throw new ValidationException(AuthConstants.Errors.UserNotFound);
 
             var result = await _userManager.ResetPasswordAsync(user, actualToken, newPassword);
 
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new ValidationException($"Falha ao redefinir senha: {errors}");
+                throw new ValidationException(string.Format(AuthConstants.Errors.PasswordResetFailed, errors));
             }
         }
 
         public async Task ChangePasswordAsync(string userId, string currentPassword, string newPassword)
         {
             var user = await _userManager.FindByIdAsync(userId);
-            if (user == null) throw new ValidationException("Usuário não encontrado.");
+            if (user == null) throw new ValidationException(AuthConstants.Errors.UserNotFound);
 
             var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
 
             if (!result.Succeeded)
             {
                 var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new ValidationException($"Falha ao alterar senha: {errors}");
+                throw new ValidationException(string.Format(AuthConstants.Errors.PasswordChangeFailed, errors));
             }
         }
     }

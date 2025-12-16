@@ -98,6 +98,17 @@ namespace Ona.Auth.Infrastructure.Services
             await SendEmailAsync(email, subject, body);
         }
 
+        public async Task SendInviteEmailAsync(string email, string inviteToken, string role)
+        {
+            var inviteUrl = $"https://localhost:7029/api/auth/accept-invite?token={inviteToken}&email={email}";
+
+            var subject = "Convite para acessar a plataforma";
+            var body = $"<p>Você foi convidado para acessar a plataforma com o perfil <strong>{role}</strong>.</p>" +
+                       $"<p>Clique <a href='{inviteUrl}'>aqui</a> para aceitar o convite e criar sua senha.</p>";
+
+            await SendEmailAsync(email, subject, body);
+        }
+
         private async Task SendEmailAsync(string toEmail, string subject, string body)
         {
             try

@@ -1,6 +1,6 @@
-﻿using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Ona.Domain.Shared.Interfaces;
+using System.Linq.Expressions;
 
 namespace Ona.Infrastructure.Shared.Repositories
 {

@@ -9,6 +9,7 @@ using Ona.Auth.Infrastructure.Data;
 using Ona.Auth.Infrastructure.Repositories;
 using Ona.Auth.Infrastructure.Services;
 using Ona.Auth.Infrastructure.Services.Background;
+using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Auth.Infrastructure.Extensions
 {
@@ -33,11 +34,15 @@ namespace Ona.Auth.Infrastructure.Extensions
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
             })
+            .AddRoles<ApplicationRole>()
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
 
             // Serviços de Infraestrutura
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUser, CurrentUser>();
+            services.AddSingleton<ICurrentTenant, CurrentTenant>();
             services.AddSingleton<IJwtTokenService, JwtTokenService>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<ITokenGenerator, TokenGenerator>();
@@ -48,6 +53,11 @@ namespace Ona.Auth.Infrastructure.Extensions
 
             // Repositórios
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ITenantRepository, TenantRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IUserTenantRoleRepository, UserTenantRoleRepository>();
+            services.AddScoped<IApplicationRoleRepository, ApplicationRoleRepository>();
+            services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
 
             // Tokens
             services.AddTokenRepository<EmailVerificationToken>();

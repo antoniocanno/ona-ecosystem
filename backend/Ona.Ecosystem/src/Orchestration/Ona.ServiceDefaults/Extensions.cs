@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
@@ -41,6 +42,8 @@ public static class Extensions
 
         builder.AddCustomSerilog();
 
+        builder.ConfigureRoute();
+
         return builder;
     }
 
@@ -49,6 +52,7 @@ public static class Extensions
         app.UseCustomErrorHandling();
         app.UseEmailVerificationMiddleware();
         app.UseRateLimitMiddleware();
+        app.UseTenantMiddleware();
         return app;
     }
 
@@ -131,5 +135,15 @@ public static class Extensions
         }
 
         return app;
+    }
+
+    public static TBuilder ConfigureRoute<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.Configure<RouteOptions>(options =>
+        {
+            options.LowercaseUrls = true;
+        });
+
+        return builder;
     }
 }

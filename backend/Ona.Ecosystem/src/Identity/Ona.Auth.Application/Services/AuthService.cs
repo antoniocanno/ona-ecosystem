@@ -6,7 +6,9 @@ using Ona.Auth.Application.DTOs.Request;
 using Ona.Auth.Application.DTOs.Responses;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Settings;
+using Ona.Auth.Domain.Constants;
 using Ona.Auth.Domain.Entities;
+using Ona.Auth.Domain.Interfaces.Services;
 using Ona.Core.Common.Exceptions;
 
 namespace Ona.Auth.Application.Services
@@ -19,6 +21,7 @@ namespace Ona.Auth.Application.Services
         private readonly IEmailService _emailService;
         private readonly ICacheService _cache;
         private readonly IRefreshTokenService _refreshTokenService;
+        private readonly IUserDomainService _userDomainService;
         private readonly GoogleAuthSettings _googleAuthSettings;
         private readonly JwtSettings _jwtSettings;
         private readonly SecuritySettings _securitySettings;
@@ -30,6 +33,7 @@ namespace Ona.Auth.Application.Services
             IEmailService emailService,
             ICacheService cache,
             IRefreshTokenService refreshTokenService,
+            IUserDomainService userDomainService,
             IOptions<GoogleAuthSettings> googleAuthSettings,
             IOptions<JwtSettings> jwtSettings,
             IOptions<SecuritySettings> securitySettings)
@@ -40,6 +44,7 @@ namespace Ona.Auth.Application.Services
             _emailService = emailService;
             _cache = cache;
             _refreshTokenService = refreshTokenService;
+            _userDomainService = userDomainService;
             _googleAuthSettings = googleAuthSettings.Value;
             _jwtSettings = jwtSettings.Value;
             _securitySettings = securitySettings.Value;
@@ -49,13 +54,12 @@ namespace Ona.Auth.Application.Services
         {
             var user = request.Adapt<ApplicationUser>();
 
-            var result = await _userManager.CreateAsync(user, request.Password);
+            // Regra específica de aplicação: usar email como user name se não informado?
+            // O DomainService já lida com UserName = Email se vazio, mas aqui o Adapt pode já preencher.
 
-            if (!result.Succeeded)
-            {
-                var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                throw new ValidationException($"Falha ao registrar usuário: {errors}");
-            }
+            // O DomainService cuida da criação e erros
+            // Mas RegisterAsync original recebia request.Password.
+            await _userDomainService.CreateUserAsync(user, request.Password);
 
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
@@ -66,14 +70,15 @@ namespace Ona.Auth.Application.Services
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
 
-            if (user == null) throw new ForbiddenException("Credenciais inválidas.");
+            await _userDomainService.ValidateUserForLoginAsync(user); // Valida se user é null ou lança exceção
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
+            var result = await _signInManager.CheckPasswordSignInAsync(user!, request.Password, lockoutOnFailure: true);
 
             if (result.Succeeded)
             {
-                var accessToken = _jwtTokenService.GenerateAccessToken(user);
-                var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
+                var roles = await _userManager.GetRolesAsync(user!);
+                var accessToken = _jwtTokenService.GenerateAccessToken(user!, roles);
+                var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user!.Id);
 
                 return new AuthResult
                 {
@@ -85,9 +90,9 @@ namespace Ona.Auth.Application.Services
             }
 
             if (result.IsLockedOut)
-                throw new ForbiddenException("O acesso à conta está temporariamente indisponível. Tente novamente mais tarde.");
+                throw new ForbiddenException(AuthConstants.Errors.AccountLocked);
 
-            throw new ForbiddenException("Credenciais inválidas.");
+            throw new ForbiddenException(AuthConstants.Errors.InvalidCredentials);
         }
 
         public async Task<AuthResult?> GoogleLoginAsync(GoogleLoginRequest request)
@@ -112,28 +117,12 @@ namespace Ona.Auth.Application.Services
                 }
                 else
                 {
-                    user = new ApplicationUser
-                    {
-                        FullName = payload.Name,
-                        Email = payload.Email,
-                        UserName = payload.Email,
-                        GoogleId = payload.Subject,
-                        EmailConfirmed = payload.EmailVerified
-                    };
-
-                    if (payload.EmailVerified)
-                        user.MarkEmailAsVerified();
-
-                    var result = await _userManager.CreateAsync(user);
-                    if (!result.Succeeded)
-                    {
-                        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
-                        throw new ValidationException($"Falha ao criar usuário Google: {errors}");
-                    }
+                    user = await _userDomainService.CreateGoogleUserAsync(payload.Email, payload.Name, payload.Subject, payload.EmailVerified);
                 }
             }
 
-            var accessToken = _jwtTokenService.GenerateAccessToken(user);
+            var roles = await _userManager.GetRolesAsync(user);
+            var accessToken = _jwtTokenService.GenerateAccessToken(user, roles);
             var refreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
             return new AuthResult
@@ -153,7 +142,8 @@ namespace Ona.Auth.Application.Services
 
             await _refreshTokenService.RevokeTokenAsync(refreshToken.Token);
 
-            var newAccessToken = _jwtTokenService.GenerateAccessToken(user);
+            var roles = await _userManager.GetRolesAsync(user);
+            var newAccessToken = _jwtTokenService.GenerateAccessToken(user, roles);
             var newRefreshToken = await _refreshTokenService.GenerateRefreshTokenAsync(user.Id);
 
             return new AuthResult

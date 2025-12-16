@@ -32,5 +32,18 @@ namespace Ona.ServiceDefaults.ApiExtensions
             app.UseMiddleware<RateLimiterMiddleware>();
             return app;
         }
+
+        /// <summary>
+        /// Adiciona middleware de tenant para controlar o acesso baseado no tenant do usuário.
+        /// </summary>
+        /// <param name="app">Instância do WebApplication</param>
+        /// <returns>WebApplication para method chaining</returns>
+        public static WebApplication UseTenantMiddleware(this WebApplication app)
+        {
+            ArgumentNullException.ThrowIfNull(app);
+
+            app.UseMiddleware<TenantMiddleware>();
+            return app;
+        }
     }
 }

@@ -1,14 +1,36 @@
+using System.Reflection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Ona.Auth.Domain.Entities;
+using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Auth.Infrastructure.Data
 {
-    public class AuthDbContext(DbContextOptions<AuthDbContext> options) : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>(options)
+    public class AuthDbContext : IdentityDbContext<
+        ApplicationUser,
+        ApplicationRole,
+        Guid,
+        IdentityUserClaim<Guid>,
+        UserTenantRole,
+        IdentityUserLogin<Guid>,
+        IdentityRoleClaim<Guid>,
+        IdentityUserToken<Guid>>
     {
+        private readonly ICurrentTenant? _currentTenant;
+
+        public AuthDbContext() : base() { }
+
+        public AuthDbContext(DbContextOptions<AuthDbContext> options, ICurrentTenant currentTenant) : base(options)
+        {
+            _currentTenant = currentTenant;
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Ignore<IdentityUserRole<Guid>>();
+            modelBuilder.Ignore<IdentityRole<Guid>>();
+
             base.OnModelCreating(modelBuilder);
 
             ConfigureTablesNames(modelBuilder);
@@ -17,13 +39,18 @@ namespace Ona.Auth.Infrastructure.Data
             ConfigurePasswordResetTokenEntity(modelBuilder);
             ConfigureRefreshTokenEntity(modelBuilder);
             ConfigureUnlockUserTokenEntity(modelBuilder);
+            ConfigureUnlockUserTokenEntity(modelBuilder);
+            ConfigureUserTenantRole(modelBuilder);
+            ConfigureTenantInviteEntity(modelBuilder);
+            ConfigureTenantFilter(modelBuilder);
         }
 
         private static void ConfigureTablesNames(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ApplicationUser>().ToTable("Users");
-            modelBuilder.Entity<IdentityRole<Guid>>().ToTable("Roles");
-            modelBuilder.Entity<IdentityUserRole<Guid>>().ToTable("UserRoles");
+            modelBuilder.Entity<ApplicationRole>().ToTable("Roles");
+            modelBuilder.Entity<UserTenantRole>().ToTable("UserRoles");
+            modelBuilder.Entity<Tenant>().ToTable("Tenants");
             modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
             modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
             modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
@@ -32,7 +59,10 @@ namespace Ona.Auth.Infrastructure.Data
             modelBuilder.Entity<EmailVerificationToken>().ToTable("EmailVerificationTokens");
             modelBuilder.Entity<PasswordResetToken>().ToTable("PasswordResetTokens");
             modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens");
+            modelBuilder.Entity<PasswordResetToken>().ToTable("PasswordResetTokens");
+            modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens");
             modelBuilder.Entity<UnlockUserToken>().ToTable("UnlockUserTokens");
+            modelBuilder.Entity<TenantInvite>().ToTable("TenantInvites");
         }
 
         private static void ConfigureUserEntity(ModelBuilder modelBuilder)
@@ -133,6 +163,84 @@ namespace Ona.Auth.Infrastructure.Data
                     .HasPrincipalKey(u => u.Id)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+        }
+
+        private static void ConfigureUserTenantRole(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UserTenantRole>(b =>
+            {
+                b.HasKey(tr => new { tr.UserId, tr.RoleId, tr.TenantId });
+            });
+        }
+
+        private static void ConfigureTenantInviteEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TenantInvite>(entity =>
+            {
+                entity.HasKey(ti => ti.Id);
+
+                entity.HasIndex(ti => ti.Token).IsUnique();
+                entity.HasIndex(ti => ti.Email);
+                entity.HasIndex(ti => ti.TenantId);
+
+                entity.Property(ti => ti.Email).IsRequired();
+                entity.Property(ti => ti.Role).IsRequired();
+                entity.Property(ti => ti.Token).IsRequired();
+                entity.Property(ti => ti.ExpiresAt).IsRequired();
+                entity.Property(ti => ti.IsConsumed).HasDefaultValue(false);
+            });
+        }
+
+        // Re-implementing just the parts we need to change or are nearby to ensure match
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            SetTenantId();
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void SetTenantId()
+        {
+            foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
+            {
+                if (entry.State == EntityState.Added && entry.Entity.TenantId == Guid.Empty && _currentTenant?.Id.HasValue == true)
+                {
+                    entry.Entity.TenantId = _currentTenant!.Id.Value;
+                }
+            }
+        }
+
+        private void ConfigureTenantFilter(ModelBuilder modelBuilder)
+        {
+            SetTenantQueryFilter(modelBuilder);
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
+                {
+                    var method = SetGlobalQueryFilterMethod.MakeGenericMethod(entityType.ClrType);
+                    method.Invoke(this, [modelBuilder]);
+                }
+            }
+        }
+
+        private static readonly MethodInfo SetGlobalQueryFilterMethod = typeof(AuthDbContext)
+            .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
+            .Single(t => t.IsGenericMethod && t.Name == nameof(SetGlobalQueryFilter));
+
+        private void SetGlobalQueryFilter<T>(ModelBuilder modelBuilder) where T : class, ITenantEntity
+        {
+            modelBuilder.Entity<T>().HasQueryFilter(e =>
+                _currentTenant == null ||
+                !_currentTenant.Id.HasValue ||
+                e.TenantId == _currentTenant.Id.GetValueOrDefault());
+        }
+
+        private void SetTenantQueryFilter(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Tenant>().HasQueryFilter(e => 
+                _currentTenant == null || 
+                !_currentTenant.Id.HasValue || 
+                e.Id == _currentTenant.Id.GetValueOrDefault());
         }
     }
 }

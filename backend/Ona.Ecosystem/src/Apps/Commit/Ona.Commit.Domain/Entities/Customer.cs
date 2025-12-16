@@ -3,9 +3,16 @@ using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Commit.Domain.Entities
 {
-    public class Customer : BaseEntity, ITenantEntity, IUserEntity
+    public class Customer : TenantEntity, IUserEntity
     {
-        public Guid TenantId { get; set; }
         public Guid UserId { get; set; }
+        public string Name { get; set; } = string.Empty;
+
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string? Email { get; set; }
+
+        public string? InternalNotes { get; set; }
+
+        public ICollection<Appointment> Appointments { get; set; }
     }
 }
