@@ -10,6 +10,7 @@ using Ona.Auth.Domain.Constants;
 using Ona.Auth.Domain.Entities;
 using Ona.Auth.Domain.Interfaces.Services;
 using Ona.Core.Common.Exceptions;
+using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Auth.Application.Services
 {
@@ -25,6 +26,7 @@ namespace Ona.Auth.Application.Services
         private readonly GoogleAuthSettings _googleAuthSettings;
         private readonly JwtSettings _jwtSettings;
         private readonly SecuritySettings _securitySettings;
+        private readonly ICurrentUser _currentUser;
 
         public AuthService(
             UserManager<ApplicationUser> userManager,
@@ -36,7 +38,8 @@ namespace Ona.Auth.Application.Services
             IUserDomainService userDomainService,
             IOptions<GoogleAuthSettings> googleAuthSettings,
             IOptions<JwtSettings> jwtSettings,
-            IOptions<SecuritySettings> securitySettings)
+            IOptions<SecuritySettings> securitySettings,
+            ICurrentUser currentUser)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -48,17 +51,13 @@ namespace Ona.Auth.Application.Services
             _googleAuthSettings = googleAuthSettings.Value;
             _jwtSettings = jwtSettings.Value;
             _securitySettings = securitySettings.Value;
+            _currentUser = currentUser;
         }
 
         public async Task RegisterAsync(RegisterRequest request)
         {
             var user = request.Adapt<ApplicationUser>();
 
-            // Regra específica de aplicação: usar email como user name se não informado?
-            // O DomainService já lida com UserName = Email se vazio, mas aqui o Adapt pode já preencher.
-
-            // O DomainService cuida da criação e erros
-            // Mas RegisterAsync original recebia request.Password.
             await _userDomainService.CreateUserAsync(user, request.Password);
 
             var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -70,7 +69,7 @@ namespace Ona.Auth.Application.Services
         {
             var user = await _userManager.FindByEmailAsync(request.Email);
 
-            await _userDomainService.ValidateUserForLoginAsync(user); // Valida se user é null ou lança exceção
+            await _userDomainService.ValidateUserForLoginAsync(user);
 
             var result = await _signInManager.CheckPasswordSignInAsync(user!, request.Password, lockoutOnFailure: true);
 
@@ -191,12 +190,14 @@ namespace Ona.Auth.Application.Services
         {
             if (!string.IsNullOrEmpty(refreshToken))
                 await _refreshTokenService.RevokeTokenAsync(refreshToken);
-
-            await _signInManager.SignOutAsync();
         }
 
-        public async Task LogoutAllAsync(Guid userId)
+        public async Task LogoutAllAsync()
         {
+            if (!_currentUser.Id.HasValue)
+                throw new ValidationException(AuthConstants.Errors.UserContextRequired);
+
+            var userId = _currentUser.Id.Value;
             await _refreshTokenService.RevokeAllUserTokensAsync(userId);
 
             var user = await _userManager.FindByIdAsync(userId.ToString());

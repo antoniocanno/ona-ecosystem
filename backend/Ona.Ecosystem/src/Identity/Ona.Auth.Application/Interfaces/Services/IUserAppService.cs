@@ -11,6 +11,8 @@ namespace Ona.Auth.Application.Interfaces.Services
         Task<UserDto> CreateUserAsync(CreateUserRequest request);
         Task InviteUserAsync(InviteUserRequest request);
         Task AcceptInviteAsync(AcceptInviteRequest request);
+        Task<UserDto> GetMeAsync();
+        Task<UserDto> UpdateMeAsync(UserUpdateRequest request);
         Task BlockUserAsync(Guid userId);
         Task UnblockUserAsync(Guid userId);
     }

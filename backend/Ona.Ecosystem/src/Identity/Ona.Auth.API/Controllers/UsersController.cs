@@ -1,32 +1,26 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Ona.Auth.Application.DTOs.Request;
 using Ona.Auth.Application.Interfaces.Services;
-using Ona.Auth.Domain.Entities;
-using Ona.Core.Common.Extensions;
-using Ona.ServiceDefaults.ApiExtensions;
+using Ona.Core.Common.Enums;
+using Ona.ServiceDefaults.Attributes;
 
 namespace Ona.Auth.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    // Allow Owner to also manage users if needed, or strictly Admin of the tenant.
-    // If Owner is super-admin, maybe they can switch tenants.
-    // Assuming "Admin" is the tenant administrator.
     public class UsersController : ControllerBase
     {
         private readonly IUserAppService _userAppServices;
 
-        public UsersController(UserManager<ApplicationUser> userManager, RoleManager<ApplicationRole> roleManager, IUserAppService userAppServices)
+        public UsersController(IUserAppService userAppServices)
         {
             _userAppServices = userAppServices;
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Owner")]
+        [AuthorizeRoles(Role.Manager)]
         public async Task<IActionResult> List()
         {
             var users = await _userAppServices.ListAsync();
@@ -34,7 +28,7 @@ namespace Ona.Auth.API.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,Owner")]
+        [AuthorizeRoles(Role.Manager)]
         public async Task<IActionResult> Create([FromBody] CreateUserRequest request)
         {
             var user = await _userAppServices.CreateUserAsync(request);
@@ -42,7 +36,7 @@ namespace Ona.Auth.API.Controllers
         }
 
         [HttpPost("invite")]
-        [Authorize(Roles = "Admin,Owner")]
+        [AuthorizeRoles(Role.Manager)]
         public async Task<IActionResult> Invite([FromBody] InviteUserRequest request)
         {
             await _userAppServices.InviteUserAsync(request);
@@ -61,8 +55,7 @@ namespace Ona.Auth.API.Controllers
         [Authorize]
         public async Task<IActionResult> GetCurrentUser()
         {
-            var userId = User.GetUserId().ToGuid();
-            var user = await _userAppServices.GetByIdAsync(userId);
+            var user = await _userAppServices.GetMeAsync();
             return Ok(user);
         }
 
@@ -70,13 +63,12 @@ namespace Ona.Auth.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateCurrentUser(UserUpdateRequest request)
         {
-            var userId = User.GetUserId().ToGuid();
-            var user = await _userAppServices.UpdateAsync(userId, request);
+            var user = await _userAppServices.UpdateMeAsync(request);
             return Ok(user);
         }
 
         [HttpPost("{id:guid}/block")]
-        [Authorize(Roles = "Admin,Owner")]
+        [AuthorizeRoles(Role.Manager)]
         public async Task<IActionResult> Block(Guid id)
         {
             await _userAppServices.BlockUserAsync(id);
@@ -84,7 +76,7 @@ namespace Ona.Auth.API.Controllers
         }
 
         [HttpPost("{id:guid}/unblock")]
-        [Authorize(Roles = "Admin,Owner")]
+        [AuthorizeRoles(Role.Manager)]
         public async Task<IActionResult> Unblock(Guid id)
         {
             await _userAppServices.UnblockUserAsync(id);

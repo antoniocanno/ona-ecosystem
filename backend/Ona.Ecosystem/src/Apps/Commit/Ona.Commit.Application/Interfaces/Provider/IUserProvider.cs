@@ -1,4 +1,4 @@
-﻿namespace Ona.Commit.Application.Interfaces
+﻿namespace Ona.Commit.Application.Interfaces.Provider
 {
     public interface IUserProvider
     {

@@ -1,9 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Net;
+using System.Net.Mail;
+using Microsoft.Extensions.Options;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Models;
 using Ona.Auth.Application.Settings;
-using System.Net;
-using System.Net.Mail;
 
 namespace Ona.Auth.Infrastructure.Services
 {
@@ -27,23 +27,12 @@ namespace Ona.Auth.Infrastructure.Services
         {
             var verificationUrl = $"https://localhost:7029/api/auth/verify-email?token={verificationToken}";
 
-            var model = new EmailVerificationModel
-            {
-                UserName = userName,
-                VerificationUrl = verificationUrl,
-                ExpirationHours = _securitySettings.EmailVerificationTokenExpiryHours,
-                SupportEmail = _emailSettings.SupportEmail,
-                CompanyName = _emailSettings.CompanyName
-            };
-
-            var template = await _templateService.RenderEmailVerificationAsync(model);
-            var subject = "Confirme seu email";
-
             var sanitizedUserName = WebUtility.HtmlEncode(userName);
 
-            var body = template
-                .Replace("{{userName}}", sanitizedUserName)
-                .Replace("{{verificationUrl}}", verificationUrl);
+            var subject = "Confirme seu email";
+            var body = $"<p>Seja bem-vindo(a), {sanitizedUserName}</p>" +
+                       $"<p>Falta pouco para você começar a usar a plataforma.</p>" +
+                       $"<p>Clique <a href='{verificationUrl}'>aqui</a> para confirmar seu email.</p>";
 
             await SendEmailAsync(email, subject, body);
         }
@@ -52,48 +41,27 @@ namespace Ona.Auth.Infrastructure.Services
         {
             var passwordResetUrl = $"https://localhost:7029/api/auth/reset-password?token={passwordResetToken}";
 
-            var model = new PasswordResetModel
-            {
-                UserName = userName,
-                PasswordResetUrl = passwordResetUrl,
-                ExpirationHours = _securitySettings.EmailVerificationTokenExpiryHours,
-                SupportEmail = _emailSettings.SupportEmail,
-                CompanyName = _emailSettings.CompanyName
-            };
-
-            var template = await _templateService.RenderEmailPasswordResetAsync(model);
-            var subject = "Redefina a sua senha";
-
             var sanitizedUserName = WebUtility.HtmlEncode(userName);
 
-            var body = template
-                .Replace("{{userName}}", sanitizedUserName)
-                .Replace("{{passwordResetUrl}}", passwordResetUrl);
+            var subject = "Redefina a sua senha";
+            var body = $"<p>Olá {sanitizedUserName},</p>" +
+                       $"<p>Você solicitou a redefinição de senha. Clique no link abaixo para redefinir sua senha.</p>" +
+                       $"<p>Se você não solicitou a redefinição de senha, ignore este email.</p>" +
+                       $"<p>Clique <a href='{passwordResetUrl}'>aqui</a> para redefinir sua senha.</p>";
 
             await SendEmailAsync(email, subject, body);
         }
 
         public async Task SendLockoutNotificationAsync(string email, string lockoutToken, string userName)
         {
-            var unlockUserUrl = $"https://localhost:7029/api/auth/unlock-user?token={lockoutToken}";
-
-            var model = new UnlockUserModel
-            {
-                UserName = userName,
-                UnlockUserUrl = unlockUserUrl,
-                ExpirationHours = _securitySettings.EmailVerificationTokenExpiryHours,
-                SupportEmail = _emailSettings.SupportEmail,
-                CompanyName = _emailSettings.CompanyName
-            };
-
-            var template = await _templateService.RenderEmailLockoutNotificationAsync(model);
-            var subject = "Redefina a sua senha";
+            var unlockUserUrl = $"https://localhost:7029/api/auth/unlock-user?token={lockoutToken}&email={email}";
 
             var sanitizedUserName = WebUtility.HtmlEncode(userName);
 
-            var body = template
-                .Replace("{{userName}}", sanitizedUserName)
-                .Replace("{{unlockUserUrl}}", unlockUserUrl);
+            var subject = "Seu email foi bloqueado";
+            var body = $"<p>Olá {sanitizedUserName},</p>" +
+                       $"<p>Por motivos de segurança, seu email foi bloqueado.</p>" +
+                       $"<p>Clique <a href='{unlockUserUrl}'>aqui</a> para desbloquear sua conta.</p>";
 
             await SendEmailAsync(email, subject, body);
         }
@@ -103,11 +71,40 @@ namespace Ona.Auth.Infrastructure.Services
             var inviteUrl = $"https://localhost:7029/api/auth/accept-invite?token={inviteToken}&email={email}";
 
             var subject = "Convite para acessar a plataforma";
-            var body = $"<p>Você foi convidado para acessar a plataforma com o perfil <strong>{role}</strong>.</p>" +
+            var body = $"<p>Você foi convidado para acessar a plataforma com o perfil de <strong>{role}</strong>.</p>" +
                        $"<p>Clique <a href='{inviteUrl}'>aqui</a> para aceitar o convite e criar sua senha.</p>";
 
             await SendEmailAsync(email, subject, body);
         }
+
+        /// <summary>
+        /// Template email model
+        /// </summary>
+        /*
+        public async Task SendEmailTemplateAsync(string email, string token, string userName)
+        {
+            var url = $"https://localhost:7029/api/auth/accept-template?token={token}&email={email}";
+
+            var model = new TemplateModel
+            {
+                UserName = userName,
+                Url = url,
+                SupportEmail = _emailSettings.SupportEmail,
+                CompanyName = _emailSettings.CompanyName
+            };
+
+            var subject = "Template Email";
+            var template = await _templateService.RenderEmailTemplateAsync(model);
+
+            var sanitizedUserName = WebUtility.HtmlEncode(userName);
+
+            var body = template
+                .Replace("{{userName}}", sanitizedUserName)
+                .Replace("{{url}}", url);
+
+            await SendEmailAsync(email, subject, body);
+        }
+        */
 
         private async Task SendEmailAsync(string toEmail, string subject, string body)
         {

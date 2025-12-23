@@ -6,6 +6,7 @@ using Ona.Auth.Application.Interfaces.Repositories;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Domain.Entities;
 using Ona.Core.Common.Exceptions;
+using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Auth.Application.Services
 {
@@ -17,6 +18,7 @@ namespace Ona.Auth.Application.Services
         private readonly IApplicationRoleRepository _roleRepository;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly ICurrentUser _currentUser;
 
         public TenantService(
             IUnitOfWork unitOfWork,
@@ -24,7 +26,8 @@ namespace Ona.Auth.Application.Services
             IUserTenantRoleRepository userTenantRoleRepository,
             IApplicationRoleRepository roleRepository,
             UserManager<ApplicationUser> userManager,
-            RoleManager<ApplicationRole> roleManager)
+            RoleManager<ApplicationRole> roleManager,
+            ICurrentUser currentUser)
         {
             _unitOfWork = unitOfWork;
             _tenantRepository = tenantRepository;
@@ -32,20 +35,27 @@ namespace Ona.Auth.Application.Services
             _roleRepository = roleRepository;
             _userManager = userManager;
             _roleManager = roleManager;
+            _currentUser = currentUser;
         }
 
-        public async Task<Tenant> CreateTenantAsync(Guid userId, CreateTenantRequest request)
+        public async Task<Tenant> CreateTenantAsync(CreateTenantRequest request)
         {
+            if (!_currentUser.Id.HasValue)
+                throw new ValidationException("Contexto de usuário necessário");
+
+            var userId = _currentUser.Id.Value;
             var tenant = request.Adapt<Tenant>();
             var user = await _userManager.FindByIdAsync(userId.ToString());
 
             if (user == null) throw new ValidationException("Usuário não encontrado");
 
+            if (user.TenantId != Guid.Empty) throw new ValidationException("Usuário já possui um tenant");
+
             await _tenantRepository.CreateAsync(tenant);
 
             await CreateDefaultRolesAsync(tenant.Id);
 
-            await AddUserToRoleAsync(user, "Admin", tenant.Id);
+            await AddUserToRoleAsync(user, "Owner", tenant.Id);
 
             if (user.TenantId == Guid.Empty)
             {

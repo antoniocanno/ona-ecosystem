@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Ona.Domain.Shared\Ona.Domain.Shared.csproj" />
+    <ProjectReference Include="..\Ona.Commit.Domain\Ona.Commit.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

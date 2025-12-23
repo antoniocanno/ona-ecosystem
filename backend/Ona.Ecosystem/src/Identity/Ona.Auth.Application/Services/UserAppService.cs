@@ -82,6 +82,22 @@ namespace Ona.Auth.Application.Services
             return user.Adapt<UserDto>();
         }
 
+        public async Task<UserDto> GetMeAsync()
+        {
+            if (!_currentUser.Id.HasValue)
+                throw new ValidationException(AuthConstants.Errors.UserContextRequired);
+
+            return await GetByIdAsync(_currentUser.Id.Value);
+        }
+
+        public async Task<UserDto> UpdateMeAsync(UserUpdateRequest request)
+        {
+            if (!_currentUser.Id.HasValue)
+                throw new ValidationException(AuthConstants.Errors.UserContextRequired);
+
+            return await UpdateAsync(_currentUser.Id.Value, request);
+        }
+
         public async Task<UserDto> CreateUserAsync(CreateUserRequest request)
         {
             if (!_currentTenant.Id.HasValue)

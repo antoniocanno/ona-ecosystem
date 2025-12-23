@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Ona.Auth.Application.DTOs.Request;
 using Ona.Auth.Application.Interfaces.Services;
-using Ona.Core.Common.Extensions;
-using Ona.ServiceDefaults.ApiExtensions;
 using Ona.ServiceDefaults.Attributes;
 
 namespace Ona.Auth.API.Controllers
@@ -66,6 +64,7 @@ namespace Ona.Auth.API.Controllers
         }
 
         [HttpPost("refresh-token")]
+        [Authorize]
         public async Task<IActionResult> RefreshToken()
         {
             var refreshToken = GetRefreshTokenCookie();
@@ -80,9 +79,14 @@ namespace Ona.Auth.API.Controllers
 
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        public async Task<IActionResult> Logout()
         {
-            await _services.LogoutAsync(request.RefreshToken);
+            var refreshToken = GetRefreshTokenCookie();
+
+            if (string.IsNullOrEmpty(refreshToken))
+                return Unauthorized("Refresh token não encontrado ou inválido no cookie.");
+
+            await _services.LogoutAsync(refreshToken);
             DeleteRefreshTokenCookie();
             return Ok();
         }
@@ -91,8 +95,7 @@ namespace Ona.Auth.API.Controllers
         [Authorize]
         public async Task<IActionResult> LogoutAll()
         {
-            var userId = User.GetUserId().ToGuid();
-            await _services.LogoutAllAsync(userId);
+            await _services.LogoutAllAsync();
             DeleteRefreshTokenCookie();
             return Ok();
         }
@@ -116,8 +119,7 @@ namespace Ona.Auth.API.Controllers
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            var userId = User.GetUserId();
-            await _accountService.ChangePasswordAsync(userId, request.CurrentPassword, request.NewPassword);
+            await _accountService.ChangePasswordAsync(request.CurrentPassword, request.NewPassword);
             return Ok();
         }
 

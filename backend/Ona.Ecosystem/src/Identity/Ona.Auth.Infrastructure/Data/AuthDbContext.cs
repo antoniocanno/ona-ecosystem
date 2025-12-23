@@ -1,9 +1,9 @@
-using System.Reflection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Ona.Auth.Domain.Entities;
 using Ona.Domain.Shared.Interfaces;
+using System.Reflection;
 
 namespace Ona.Auth.Infrastructure.Data
 {
@@ -191,7 +191,6 @@ namespace Ona.Auth.Infrastructure.Data
             });
         }
 
-        // Re-implementing just the parts we need to change or are nearby to ensure match
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             SetTenantId();
@@ -230,17 +229,18 @@ namespace Ona.Auth.Infrastructure.Data
         private void SetGlobalQueryFilter<T>(ModelBuilder modelBuilder) where T : class, ITenantEntity
         {
             modelBuilder.Entity<T>().HasQueryFilter(e =>
-                _currentTenant == null ||
-                !_currentTenant.Id.HasValue ||
-                e.TenantId == _currentTenant.Id.GetValueOrDefault());
+                e.TenantId == (_currentTenant != null && _currentTenant.Id.HasValue
+                    ? _currentTenant.Id.Value
+                    : Guid.Empty));
         }
 
         private void SetTenantQueryFilter(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Tenant>().HasQueryFilter(e => 
-                _currentTenant == null || 
-                !_currentTenant.Id.HasValue || 
-                e.Id == _currentTenant.Id.GetValueOrDefault());
+            modelBuilder.Entity<Tenant>().HasQueryFilter(e =>
+                (_currentTenant == null ||
+                !_currentTenant.Id.HasValue ||
+                e.Id == _currentTenant.Id.GetValueOrDefault()) &&
+                !e.IsDeleted);
         }
     }
 }

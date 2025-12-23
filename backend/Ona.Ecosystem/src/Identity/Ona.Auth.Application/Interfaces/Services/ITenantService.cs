@@ -6,7 +6,7 @@ namespace Ona.Auth.Application.Interfaces.Services
 {
     public interface ITenantService
     {
-        Task<Tenant> CreateTenantAsync(Guid userId, CreateTenantRequest request);
+        Task<Tenant> CreateTenantAsync(CreateTenantRequest request);
         Task<TenantDto?> GetByIdAsync(Guid id);
         Task<IEnumerable<TenantDto>> ListAsync();
         Task<TenantDto> UpdateAsync(Guid id, UpdateTenantRequest request);

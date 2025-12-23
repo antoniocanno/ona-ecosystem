@@ -1,8 +1,8 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace Ona.ServiceDefaults.ApiExtensions
 {
@@ -46,7 +46,13 @@ namespace Ona.ServiceDefaults.ApiExtensions
             IConfiguration configuration)
         {
             var secretKey = configuration["JwtSettings:Secret"]
-                ?? throw new InvalidOperationException("JwtSettings não configurado no appsettings.json");
+                ?? throw new InvalidOperationException("JwtSettings:Secret não configurado no appsettings.json e nem via Environment Variables.");
+
+            var issuer = configuration["JwtSettings:Issuer"]
+                ?? throw new InvalidOperationException("JwtSettings:Issuer não configurado. Certifique-se que o AppHost está passando este valor.");
+
+            var audience = configuration["JwtSettings:Audience"]
+                ?? throw new InvalidOperationException("JwtSettings:Audience não configurado. Certifique-se que o AppHost está passando este valor.");
 
             var key = Encoding.ASCII.GetBytes(secretKey);
 
@@ -68,8 +74,8 @@ namespace Ona.ServiceDefaults.ApiExtensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
 
-                    ValidIssuer = configuration["JwtSettings:Issuer"],
-                    ValidAudience = configuration["JwtSettings:Audience"],
+                    ValidIssuer = issuer,
+                    ValidAudience = audience,
                 };
             });
 

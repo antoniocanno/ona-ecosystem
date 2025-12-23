@@ -12,6 +12,6 @@ namespace Ona.Auth.Application.Interfaces.Services
         Task VerifyEmailAsync(VerifyEmailRequest request);
         Task ResendVerificationEmailAsync(string email);
         Task LogoutAsync(string? refreshToken = null);
-        Task LogoutAllAsync(Guid userId);
+        Task LogoutAllAsync();
     }
 }

@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Ona.Domain.Shared.Interfaces;
 
-namespace Ona.Auth.Infrastructure.Services
+namespace Ona.ServiceDefaults.Services
 {
     public class CurrentTenant : ICurrentTenant
     {

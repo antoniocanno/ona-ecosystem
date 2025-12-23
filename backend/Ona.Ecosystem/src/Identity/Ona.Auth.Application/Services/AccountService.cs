@@ -5,6 +5,7 @@ using Ona.Auth.Application.Settings;
 using Ona.Auth.Domain.Constants;
 using Ona.Auth.Domain.Entities;
 using Ona.Core.Common.Exceptions;
+using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Auth.Application.Services
 {
@@ -14,17 +15,20 @@ namespace Ona.Auth.Application.Services
         private readonly IEmailService _emailService;
         private readonly ICacheService _cache;
         private readonly SecuritySettings _securitySettings;
+        private readonly ICurrentUser _currentUser;
 
         public AccountService(
             UserManager<ApplicationUser> userManager,
             IEmailService emailService,
             ICacheService cache,
-            IOptions<SecuritySettings> securitySettings)
+            IOptions<SecuritySettings> securitySettings,
+            ICurrentUser currentUser)
         {
             _userManager = userManager;
             _emailService = emailService;
             _cache = cache;
             _securitySettings = securitySettings.Value;
+            _currentUser = currentUser;
         }
 
         public async Task RequestPasswordResetAsync(string email)
@@ -80,8 +84,12 @@ namespace Ona.Auth.Application.Services
             }
         }
 
-        public async Task ChangePasswordAsync(string userId, string currentPassword, string newPassword)
+        public async Task ChangePasswordAsync(string currentPassword, string newPassword)
         {
+            if (!_currentUser.Id.HasValue)
+                throw new ValidationException(AuthConstants.Errors.UserContextRequired);
+
+            var userId = _currentUser.Id.Value.ToString();
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) throw new ValidationException(AuthConstants.Errors.UserNotFound);
 

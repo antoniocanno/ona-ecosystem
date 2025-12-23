@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Ona.Core.Common.Extensions;
+﻿using Microsoft.AspNetCore.Mvc;
+using Ona.Core.Common.Enums;
 using Ona.Quote.Application.DTOs.Request;
 using Ona.Quote.Application.Interfaces.Services;
-using Ona.ServiceDefaults.ApiExtensions;
+using Ona.ServiceDefaults.Attributes;
 
 namespace Ona.Quote.API.Controller
 {
@@ -19,20 +18,18 @@ namespace Ona.Quote.API.Controller
         }
 
         [HttpPost]
-        [Authorize]
+        [AuthorizeRoles(Role.Operator)]
         public async Task<IActionResult> CreateClient(ClientCreateRequest request)
         {
-            var userId = User.GetUserId().ToGuid();
-            var client = await _clientAppService.CreateAsync(userId, request);
+            var client = await _clientAppService.CreateAsync(request);
             return Ok(client);
         }
 
         [HttpPatch]
-        [Authorize]
+        [AuthorizeRoles(Role.Operator)]
         public async Task<IActionResult> UpdateCurrentClient(ClientUpdateRequest request)
         {
-            var userId = User.GetUserId().ToGuid();
-            var client = await _clientAppService.UpdateAsync(userId, request);
+            var client = await _clientAppService.UpdateAsync(request);
             return Ok(client);
         }
     }
