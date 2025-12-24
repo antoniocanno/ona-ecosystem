@@ -59,6 +59,7 @@ public static class Extensions
         app.UseCustomErrorHandling();
         app.UseEmailVerificationMiddleware();
         app.UseRateLimitMiddleware();
+        app.UseAuthentication();
         app.UseTenantMiddleware();
         return app;
     }

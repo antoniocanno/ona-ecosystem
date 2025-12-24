@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Ona.Domain.Shared.Interfaces;
 
@@ -20,14 +19,31 @@ namespace Ona.Infrastructure.Shared.Data
 
         private static void SetTenantQueryFilter(this ModelBuilder modelBuilder, Type entityType, ICurrentTenant? currentTenant)
         {
+            if (currentTenant == null) return;
+
             var parameter = Expression.Parameter(entityType, "e");
-            var property = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
+            var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
 
-            // Expression: e => e.TenantId == (currentTenant.Id ?? Guid.Empty)
-            var tenantIdExpression = Expression.Constant(currentTenant?.Id ?? Guid.Empty);
-            var body = Expression.Equal(property, tenantIdExpression);
-            var lambda = Expression.Lambda(body, parameter);
+            // Referência dinâmica para a instância do currentTenant
+            var currentTenantConst = Expression.Constant(currentTenant);
+            var currentTenantIdProperty = Expression.Property(currentTenantConst, nameof(ICurrentTenant.Id));
 
+            // !currentTenant.Id.HasValue (Se não houver tenant no contexto, permite tudo)
+            var hasValueProperty = Expression.Property(currentTenantIdProperty, "HasValue");
+            var hasNoValue = Expression.Not(hasValueProperty);
+
+            // e.TenantId == currentTenant.Id.Value
+            var tenantIdValue = Expression.Property(currentTenantIdProperty, "Value");
+            var isCurrentTenant = Expression.Equal(tenantIdProperty, tenantIdValue);
+
+            // e.TenantId == Guid.Empty (Registros globais)
+            var guidEmpty = Expression.Constant(Guid.Empty);
+            var isGlobal = Expression.Equal(tenantIdProperty, guidEmpty);
+
+            // Combinação: !HasValue || e.TenantId == Id.Value || e.TenantId == Guid.Empty
+            var filter = Expression.OrElse(hasNoValue, Expression.OrElse(isCurrentTenant, isGlobal));
+
+            var lambda = Expression.Lambda(filter, parameter);
             modelBuilder.Entity(entityType).HasQueryFilter(lambda);
         }
 

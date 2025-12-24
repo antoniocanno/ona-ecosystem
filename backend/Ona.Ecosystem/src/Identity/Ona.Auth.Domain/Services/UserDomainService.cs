@@ -17,7 +17,6 @@ namespace Ona.Auth.Domain.Services
 
         public async Task<ApplicationUser> CreateUserAsync(ApplicationUser user, string? password = null)
         {
-            // Regras de domínio comuns na criação
             if (string.IsNullOrWhiteSpace(user.UserName))
             {
                 user.UserName = user.Email;

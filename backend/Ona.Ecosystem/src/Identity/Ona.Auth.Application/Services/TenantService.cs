@@ -5,6 +5,7 @@ using Ona.Auth.Application.DTOs.Responses;
 using Ona.Auth.Application.Interfaces.Repositories;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Domain.Entities;
+using Ona.Core.Common.Enums;
 using Ona.Core.Common.Exceptions;
 using Ona.Domain.Shared.Interfaces;
 
@@ -55,7 +56,7 @@ namespace Ona.Auth.Application.Services
 
             await CreateDefaultRolesAsync(tenant.Id);
 
-            await AddUserToRoleAsync(user, "Owner", tenant.Id);
+            await AddUserToRoleAsync(user, nameof(Role.Manager), tenant.Id);
 
             if (user.TenantId == Guid.Empty)
             {
@@ -137,10 +138,9 @@ namespace Ona.Auth.Application.Services
 
         private async Task CreateDefaultRolesAsync(Guid tenantId)
         {
-            await CreateRoleAsync(tenantId, "Owner");
-            await CreateRoleAsync(tenantId, "Admin");
-            await CreateRoleAsync(tenantId, "Staff");
-            await CreateRoleAsync(tenantId, "Professional");
+            await CreateRoleAsync(tenantId, nameof(Role.Manager));
+            await CreateRoleAsync(tenantId, nameof(Role.Operator));
+            await CreateRoleAsync(tenantId, nameof(Role.ReadOnly));
         }
 
         private async Task CreateRoleAsync(Guid tenantId, string roleName)

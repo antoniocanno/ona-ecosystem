@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Ona.Auth.Domain.Entities;
 using Ona.Domain.Shared.Interfaces;
-using System.Reflection;
+using Ona.Infrastructure.Shared.Data;
 
 namespace Ona.Auth.Infrastructure.Data
 {
@@ -42,7 +42,9 @@ namespace Ona.Auth.Infrastructure.Data
             ConfigureUnlockUserTokenEntity(modelBuilder);
             ConfigureUserTenantRole(modelBuilder);
             ConfigureTenantInviteEntity(modelBuilder);
-            ConfigureTenantFilter(modelBuilder);
+
+            modelBuilder.ApplyTenantFilters(_currentTenant);
+            SetTenantQueryFilter(modelBuilder);
         }
 
         private static void ConfigureTablesNames(ModelBuilder modelBuilder)
@@ -206,32 +208,6 @@ namespace Ona.Auth.Infrastructure.Data
                     entry.Entity.TenantId = _currentTenant!.Id.Value;
                 }
             }
-        }
-
-        private void ConfigureTenantFilter(ModelBuilder modelBuilder)
-        {
-            SetTenantQueryFilter(modelBuilder);
-
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
-                {
-                    var method = SetGlobalQueryFilterMethod.MakeGenericMethod(entityType.ClrType);
-                    method.Invoke(this, [modelBuilder]);
-                }
-            }
-        }
-
-        private static readonly MethodInfo SetGlobalQueryFilterMethod = typeof(AuthDbContext)
-            .GetMethods(BindingFlags.NonPublic | BindingFlags.Instance)
-            .Single(t => t.IsGenericMethod && t.Name == nameof(SetGlobalQueryFilter));
-
-        private void SetGlobalQueryFilter<T>(ModelBuilder modelBuilder) where T : class, ITenantEntity
-        {
-            modelBuilder.Entity<T>().HasQueryFilter(e =>
-                e.TenantId == (_currentTenant != null && _currentTenant.Id.HasValue
-                    ? _currentTenant.Id.Value
-                    : Guid.Empty));
         }
 
         private void SetTenantQueryFilter(ModelBuilder modelBuilder)

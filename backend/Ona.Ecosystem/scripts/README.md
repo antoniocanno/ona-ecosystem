@@ -1,6 +1,6 @@
 # Scripts de Migrations - Entity Framework
 
-Este diretório contém scripts auxiliares para gerenciar migrations do Entity Framework Core.
+Este diretório contém scripts auxiliares para gerenciar migrations do Entity Framework Core para os projetos do ecossistema Ona.
 
 ## 🚀 Sistema Automatizado de Migrations
 
@@ -13,132 +13,96 @@ O projeto está configurado para **aplicar migrations automaticamente** quando a
    - Se houver, aplica automaticamente
    - Logs informativos são exibidos no console
 
-2. **Para criar novas migrations**, você ainda precisa executar o comando manualmente (veja abaixo)
+2. **Para criar novas migrations**, você ainda precisa executar o comando manualmente usando os scripts abaixo.
 
 ## 📝 Scripts Disponíveis
 
+Todos os scripts aceitam o parâmetro `-Project` para definir qual contexto de banco de dados você deseja manipular:
+- `auth` (Padrão): Gerencia o Identity e Controle de Acesso.
+- `commit`: Gerencia o App Commit (Agendamentos e Clientes).
+
 ### 1. Criar Migration
 
-Cria uma nova migration com o nome especificado.
+Cria uma nova migration com o nome especificado para o projeto selecionado.
 
 ```powershell
-.\scripts\create-migration.ps1 -Name "NomeDaMigration"
+.\scripts\create-migration.ps1 -Name "NomeDaMigration" -Project "auth|commit"
 ```
 
-**Exemplo:**
+**Exemplo para o Identity (Auth):**
 ```powershell
 .\scripts\create-migration.ps1 -Name "AddUserProfileTable"
 ```
 
-### 2. Aplicar Migrations
-
-Aplica todas as migrations pendentes no banco de dados.
-
+**Exemplo para o Commit:**
 ```powershell
-.\scripts\update-database.ps1
+.\scripts\create-migration.ps1 -Name "AddAppointmentTable" -Project commit
 ```
 
-> **Nota:** Normalmente não é necessário executar este script, pois as migrations são aplicadas automaticamente ao iniciar a aplicação em modo Development.
+### 2. Aplicar Migrations
+
+Aplica todas as migrations pendentes no banco de dados para o projeto selecionado.
+
+```powershell
+.\scripts\update-database.ps1 -Project "auth|commit"
+```
+
+> **Nota:** Normalmente não é necessário executar este script no Identity, pois as migrations são aplicadas automaticamente ao iniciar a aplicação em modo Development.
 
 ### 3. Remover Última Migration
 
 Remove a última migration criada (útil se você cometeu um erro).
 
 ```powershell
-.\scripts\remove-migration.ps1
+.\scripts\remove-migration.ps1 -Project "auth|commit"
 ```
 
 ## 🔧 Fluxo de Trabalho Recomendado
 
-### Desenvolvimento Local (com .NET Aspire)
+### Desenvolvimento Local
 
 1. **Criar uma nova migration:**
    ```powershell
-   .\scripts\create-migration.ps1 -Name "SuaMigration"
+   .\scripts\create-migration.ps1 -Name "SuaMigration" -Project commit
    ```
 
-2. **Iniciar o AppHost:**
-   ```powershell
-   dotnet run --project src/Orchestration/Ona.AppHost/Ona.AppHost.csproj
-   ```
-   
-   As migrations serão aplicadas automaticamente quando a API iniciar.
-
-### Desenvolvimento Local (sem Aspire)
-
-1. **Criar uma nova migration:**
-   ```powershell
-   .\scripts\create-migration.ps1 -Name "SuaMigration"
-   ```
-
-2. **Aplicar migrations manualmente (se necessário):**
-   ```powershell
-   .\scripts\update-database.ps1
-   ```
-
-3. **Ou simplesmente iniciar a aplicação** - as migrations serão aplicadas automaticamente em modo Development.
+2. **Aplicar migrations:**
+   - Inicie o **AppHost** para aplicação automática:
+     ```powershell
+     dotnet run --project src/Orchestration/Ona.AppHost/Ona.AppHost.csproj
+     ```
+   - Ou aplique manualmente:
+     ```powershell
+     .\scripts\update-database.ps1 -Project commit
+     ```
 
 ## ⚙️ Configuração
 
-### Connection String
+### Connection Strings
 
-A connection string deve estar configurada em:
-- `src/Identity/Ona.Auth.API/appsettings.Development.json`
-
-Exemplo:
-```json
-{
-  "ConnectionStrings": {
-    "auth-db": "Host=localhost;Port=5432;Database=auth-db;Username=postgres;Password=postgres"
-  }
-}
-```
+As connection strings devem estar configuradas nos respectivos projetos de API:
+- **Auth:** `src/Identity/Ona.Auth.API/appsettings.Development.json`
+- **Commit:** `src/Apps/Commit/Ona.Commit.API/appsettings.Development.json`
 
 ### Com .NET Aspire
 
-Quando você executa o AppHost, a connection string é configurada automaticamente via service discovery. Você não precisa configurar manualmente.
+Quando você executa o AppHost, as connection strings são injetadas automaticamente. Você não precisa configurar manualmente os arquivos JSON se estiver rodando via Aspire.
 
-## 📋 Comandos Manuais (Alternativa aos Scripts)
+## 📋 Projetos Suportados
 
-Se preferir usar os comandos diretamente:
-
-### Criar Migration
-```powershell
-dotnet ef migrations add NomeDaMigration `
-  --project ./src/Identity/Ona.Auth.Infrastructure/Ona.Auth.Infrastructure.csproj `
-  --startup-project ./src/Identity/Ona.Auth.API/Ona.Auth.API.csproj
-```
-
-### Aplicar Migrations
-```powershell
-dotnet ef database update `
-  --project ./src/Identity/Ona.Auth.Infrastructure/Ona.Auth.Infrastructure.csproj `
-  --startup-project ./src/Identity/Ona.Auth.API/Ona.Auth.API.csproj
-```
-
-### Remover Migration
-```powershell
-dotnet ef migrations remove `
-  --project ./src/Identity/Ona.Auth.Infrastructure/Ona.Auth.Infrastructure.csproj `
-  --startup-project ./src/Identity/Ona.Auth.API/Ona.Auth.API.csproj
-```
+| Projeto | Nome do Contexto | Caminho da Infraestrutura |
+| :--- | :--- | :--- |
+| **Auth** | `AuthDbContext` | `src/Identity/Ona.Auth.Infrastructure` |
+| **Commit** | `CommitDbContext` | `src/Apps/Commit/Ona.Commit.Infrastructure` |
 
 ## 🐛 Troubleshooting
 
 ### Erro: "Host can't be null"
 
-- Verifique se a connection string está configurada corretamente no `appsettings.Development.json`
-- Certifique-se de que o PostgreSQL está rodando
-- Se estiver usando Aspire, certifique-se de que o AppHost está configurado corretamente
+- Verifique se a connection string está configurada corretamente no JSON do projeto de API correspondente.
+- Certifique-se de que o PostgreSQL está rodando.
 
 ### Migrations não são aplicadas automaticamente
 
-- Verifique se está rodando em modo `Development` (variável `ASPNETCORE_ENVIRONMENT=Development`)
-- Verifique os logs da aplicação para ver se há erros
-- Certifique-se de que o banco de dados está acessível
-
-## 📚 Mais Informações
-
-- [Entity Framework Core Migrations](https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/)
-- [.NET Aspire Documentation](https://learn.microsoft.com/en-us/dotnet/aspire/)
-
+- Verifique se está rodando em modo `Development`.
+- Verifique se o `AddServiceDefaults()` e `app.ApplyDatabaseMigrationsAsync()` (ou similar) estão presentes no `Program.cs` do seu projeto.

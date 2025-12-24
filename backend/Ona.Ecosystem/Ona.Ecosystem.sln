@@ -38,6 +38,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ona.Commit.Application", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ona.Commit.API", "src\Apps\Commit\Ona.Commit.API\Ona.Commit.API.csproj", "{980FD46B-45E1-29D2-8527-A23906E2184E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ona.Application.Shared", "Ona.Application.Shared\Ona.Application.Shared.csproj", "{6E52B9EC-D34D-4996-B7B2-6A399711D5D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -96,6 +98,10 @@ Global
 		{980FD46B-45E1-29D2-8527-A23906E2184E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{980FD46B-45E1-29D2-8527-A23906E2184E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{980FD46B-45E1-29D2-8527-A23906E2184E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E52B9EC-D34D-4996-B7B2-6A399711D5D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E52B9EC-D34D-4996-B7B2-6A399711D5D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E52B9EC-D34D-4996-B7B2-6A399711D5D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E52B9EC-D34D-4996-B7B2-6A399711D5D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -115,6 +121,7 @@ Global
 		{6D6D8CFD-6069-4061-A2AF-A4871760A1B9} = {5FDD178F-011A-4E8D-B65B-DAA8B186A417}
 		{F60F6933-5685-4809-AF9B-B75826C88CDB} = {5FDD178F-011A-4E8D-B65B-DAA8B186A417}
 		{980FD46B-45E1-29D2-8527-A23906E2184E} = {5FDD178F-011A-4E8D-B65B-DAA8B186A417}
+		{6E52B9EC-D34D-4996-B7B2-6A399711D5D8} = {E39E5BDA-EEFE-4D71-ADC4-C818A1C9C69F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {756B9207-245D-4125-9D64-1B0065E820DC}

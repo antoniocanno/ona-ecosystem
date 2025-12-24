@@ -1,15 +1,23 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Ona.Commit.Application.Interfaces.Provider;
 using Ona.Commit.Domain.Entities;
 using Ona.Domain.Shared.Interfaces;
-using System.Linq.Expressions;
+using Ona.Infrastructure.Shared.Data;
 
 namespace Ona.Commit.Infrastructure.Data
 {
-    public class CommitDbContext(DbContextOptions<CommitDbContext> options, ICurrentTenant currentTenant) : DbContext(options)
+    public class CommitDbContext : DbContext
     {
+        private readonly ICurrentTenant? _currentTenant;
+
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
+
+        public CommitDbContext() : base() { }
+
+        public CommitDbContext(DbContextOptions<CommitDbContext> options, ICurrentTenant currentTenant) : base(options)
+        {
+            _currentTenant = currentTenant;
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -20,7 +28,7 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureAppointmentEntity(modelBuilder);
             ConfigureNotificationLogEntity(modelBuilder);
 
-            //ConfigureQueryFilters(modelBuilder);
+            modelBuilder.ApplyTenantFilters(_currentTenant);
         }
 
         private static void ConfigureTablesNames(ModelBuilder modelBuilder)
@@ -58,29 +66,5 @@ namespace Ona.Commit.Infrastructure.Data
                 entity.HasIndex(n => n.ExternalMessageId);
             });
         }
-
-        //private void ConfigureQueryFilters(ModelBuilder modelBuilder)
-        //{
-        //    var a = currentTenant.Id == tenantProvider.TenantId;
-        //    foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-        //    {
-        //        if (typeof(ITenantEntity).IsAssignableFrom(entityType.ClrType))
-        //        {
-        //            var parameter = Expression.Parameter(entityType.ClrType, "e");
-        //            var property = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
-        //            var tenantId = Expression.Constant(tenantProvider.TenantId);
-        //            var body = Expression.Equal(property, tenantId);
-        //            var lambda = Expression.Lambda(body, parameter);
-
-        //            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
-        //        }
-        //    }
-
-        //    modelBuilder.Entity<Appointment>()
-        //        .HasQueryFilter(a => a.TenantId == tenantProvider.TenantId);
-
-        //    modelBuilder.Entity<Customer>()
-        //        .HasQueryFilter(c => c.TenantId == tenantProvider.TenantId);
-        //}
     }
 }
