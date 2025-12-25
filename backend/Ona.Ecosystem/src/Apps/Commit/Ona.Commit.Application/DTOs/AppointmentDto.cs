@@ -6,7 +6,7 @@ namespace Ona.Commit.Application.DTOs
 {
     public record AppointmentDto
     {
-        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
         public Guid CustomerId { get; set; }
         public DateTimeOffset StartDate { get; set; }
         public DateTimeOffset EndDate { get; set; }

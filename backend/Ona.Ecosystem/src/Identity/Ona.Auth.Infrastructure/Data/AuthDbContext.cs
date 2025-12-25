@@ -205,7 +205,7 @@ namespace Ona.Auth.Infrastructure.Data
             {
                 if (entry.State == EntityState.Added && entry.Entity.TenantId == Guid.Empty && _currentTenant?.Id.HasValue == true)
                 {
-                    entry.Entity.TenantId = _currentTenant!.Id.Value;
+                    entry.Entity.SetTenantId(_currentTenant!.Id.Value);
                 }
             }
         }

@@ -40,16 +40,17 @@ namespace Ona.Commit.Application.Services
             if (!_currentUser.Id.HasValue)
                 throw new ValidationException("Contexto do usuário é obrigatório.");
 
-            var customer = new Customer
-            {
-                UserId = _currentUser.Id.Value,
-                Name = request.Name,
-                PhoneNumber = request.PhoneNumber,
-                Email = request.Email,
-                InternalNotes = request.InternalNotes
-            };
+            var customer = new Customer(
+                _currentUser.Id.Value,
+                request.Name,
+                request.PhoneNumber,
+                request.Email,
+                request.InternalNotes);
 
-            return await _repository.CreateAsync(customer);
+            customer = await _repository.CreateAsync(customer);
+            await _repository.SaveChangesAsync();
+
+            return customer;
         }
 
         public async Task<CustomerDto> UpdateAsync(Guid id, UpdateCustomerRequest request)
@@ -58,13 +59,18 @@ namespace Ona.Commit.Application.Services
             if (customer == null)
                 throw new NotFoundException("Cliente não encontrado.");
 
-            if (request.Name != null) customer.Name = request.Name;
-            if (request.PhoneNumber != null) customer.PhoneNumber = request.PhoneNumber;
-            if (request.Email != null) customer.Email = request.Email;
-            if (request.InternalNotes != null) customer.InternalNotes = request.InternalNotes;
-            if (request.TotalNoShows.HasValue) customer.TotalNoShows = request.TotalNoShows.Value;
+            if (request.Name != null)
+                customer.UpdateName(request.Name);
 
-            customer.UpdatedAt = DateTimeOffset.UtcNow;
+            if (request.PhoneNumber != null)
+                customer.UpdatePhoneNumber(request.PhoneNumber);
+
+            if (request.Email != null)
+                customer.UpdateEmail(request.Email);
+
+            if (request.InternalNotes != null)
+                customer.UpdateInternalNotes(request.InternalNotes);
+
             customer = _repository.Update(customer);
             await _repository.SaveChangesAsync();
 
@@ -77,8 +83,8 @@ namespace Ona.Commit.Application.Services
             if (customer == null)
                 throw new NotFoundException("Cliente não encontrado.");
 
-            customer.IsDeleted = true;
-            customer.UpdatedAt = DateTimeOffset.UtcNow;
+            customer.Delete();
+
             _repository.Update(customer);
             await _repository.SaveChangesAsync();
         }

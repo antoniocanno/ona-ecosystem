@@ -1,13 +1,23 @@
 ﻿using Ona.Core.Common.Helpers;
-using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Domain.Shared.Entities
 {
-    public class BaseEntity
+    public abstract class BaseEntity
     {
-        public Guid Id { get; set; } = GuidGenerator.NewSequentialGuid();
-        public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-        public DateTimeOffset? UpdatedAt { get; set; }
-        public bool IsDeleted { get; set; } = false;
+        public Guid Id { get; } = GuidGenerator.NewSequentialGuid();
+        public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? UpdatedAt { get; protected set; }
+        public bool IsDeleted { get; protected set; } = false;
+
+        public void Update()
+        {
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void Delete()
+        {
+            IsDeleted = true;
+            Update();
+        }
     }
 }

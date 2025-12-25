@@ -1,7 +1,7 @@
-﻿using System.Linq.Expressions;
-using Ona.Core.Common.Exceptions;
+﻿using Ona.Core.Common.Exceptions;
 using Ona.Domain.Shared.Entities;
 using Ona.Domain.Shared.Interfaces;
+using System.Linq.Expressions;
 
 namespace Ona.Application.Shared.Services
 {
@@ -18,7 +18,7 @@ namespace Ona.Application.Shared.Services
         {
             if (entity is BaseEntity baseEntity)
             {
-                baseEntity.CreatedAt = DateTimeOffset.UtcNow;
+                baseEntity.Update();
             }
 
             var createdEntity = await _repository.CreateAsync(entity);
@@ -30,7 +30,7 @@ namespace Ona.Application.Shared.Services
         {
             if (entity is BaseEntity baseEntity)
             {
-                baseEntity.UpdatedAt = DateTimeOffset.UtcNow;
+                baseEntity.Update();
             }
 
             var updatedEntity = _repository.Update(entity);
@@ -48,8 +48,7 @@ namespace Ona.Application.Shared.Services
 
             if (entity is BaseEntity baseEntity)
             {
-                baseEntity.IsDeleted = true;
-                baseEntity.UpdatedAt = DateTimeOffset.UtcNow;
+                baseEntity.Delete();
                 _repository.Update(entity);
             }
             else

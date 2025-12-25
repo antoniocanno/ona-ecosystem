@@ -1,7 +1,5 @@
 ﻿using Ona.Commit.Application.DTOs;
 using Ona.Commit.Application.DTOs.Request;
-using Ona.Commit.Domain.Entities;
-using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Commit.Application.Interfaces.Services
 {

@@ -2,6 +2,6 @@
 {
     public interface IUserEntity
     {
-        Guid UserId { get; set; }
+        Guid UserId { get; }
     }
 }

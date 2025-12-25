@@ -92,7 +92,7 @@ namespace Ona.Auth.Application.Services
             if (!string.IsNullOrEmpty(request.Domain))
                 tenant.Domain = request.Domain;
 
-            tenant.UpdatedAt = DateTimeOffset.UtcNow;
+            tenant.Update();
 
             _tenantRepository.Update(tenant);
             await _unitOfWork.CommitAsync();
@@ -106,7 +106,7 @@ namespace Ona.Auth.Application.Services
             if (tenant == null) throw new NotFoundException("Tenant não encontrado.");
 
             tenant.Status = TenantStatus.Suspended;
-            tenant.UpdatedAt = DateTimeOffset.UtcNow;
+            tenant.Update();
 
             _tenantRepository.Update(tenant);
             await _unitOfWork.CommitAsync();
@@ -118,7 +118,7 @@ namespace Ona.Auth.Application.Services
             if (tenant == null) throw new NotFoundException("Tenant não encontrado.");
 
             tenant.Status = TenantStatus.Active;
-            tenant.UpdatedAt = DateTimeOffset.UtcNow;
+            tenant.Update();
 
             _tenantRepository.Update(tenant);
             await _unitOfWork.CommitAsync();
@@ -129,8 +129,7 @@ namespace Ona.Auth.Application.Services
             var tenant = await _tenantRepository.GetByIdAsync(id);
             if (tenant == null) throw new NotFoundException("Tenant não encontrado.");
 
-            tenant.IsDeleted = true;
-            tenant.UpdatedAt = DateTimeOffset.UtcNow;
+            tenant.Delete();
 
             _tenantRepository.Update(tenant);
             await _unitOfWork.CommitAsync();
@@ -145,11 +144,7 @@ namespace Ona.Auth.Application.Services
 
         private async Task CreateRoleAsync(Guid tenantId, string roleName)
         {
-            var role = new ApplicationRole(roleName)
-            {
-                TenantId = tenantId,
-                NormalizedName = roleName.ToUpperInvariant()
-            };
+            var role = new ApplicationRole(roleName, tenantId);
 
             var result = await _roleManager.CreateAsync(role);
             if (!result.Succeeded)
@@ -164,12 +159,7 @@ namespace Ona.Auth.Application.Services
 
             if (role == null) throw new ValidationException($"Role {roleName} não encontrada para o tenant {tenantId}");
 
-            var userRole = new UserTenantRole
-            {
-                UserId = user.Id,
-                RoleId = role.Id,
-                TenantId = tenantId
-            };
+            var userRole = new UserTenantRole(user.Id, role.Id, tenantId);
 
             await _userTenantRoleRepository.CreateAsync(userRole);
             await _unitOfWork.CommitAsync();

@@ -121,12 +121,7 @@ namespace Ona.Auth.Application.Services
             var role = await _roleManager.FindByNameAsync(request.Role);
             if (role == null) throw new NotFoundException(string.Format(AuthConstants.Errors.RoleNotFound, request.Role));
 
-            await _userTenantRoleRepository.CreateAsync(new UserTenantRole
-            {
-                UserId = user.Id,
-                RoleId = role.Id,
-                TenantId = _currentTenant.Id.Value
-            });
+            await _userTenantRoleRepository.CreateAsync(new UserTenantRole(user.Id, role.Id, _currentTenant.Id.Value));
             await _userTenantRoleRepository.SaveChangesAsync();
 
             return user.Adapt<UserDto>();
@@ -181,12 +176,7 @@ namespace Ona.Auth.Application.Services
             var role = await _roleManager.FindByNameAsync(invite.Role);
             if (role != null)
             {
-                await _userTenantRoleRepository.CreateAsync(new UserTenantRole
-                {
-                    UserId = user.Id,
-                    RoleId = role.Id,
-                    TenantId = invite.TenantId
-                });
+                await _userTenantRoleRepository.CreateAsync(new UserTenantRole(user.Id, role.Id, invite.TenantId));
             }
 
             invite.IsConsumed = true;

@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Commit.Infrastructure.Data
 {

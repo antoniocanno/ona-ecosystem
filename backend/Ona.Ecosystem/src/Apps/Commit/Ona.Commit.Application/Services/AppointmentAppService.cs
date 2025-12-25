@@ -23,13 +23,13 @@ namespace Ona.Commit.Application.Services
 
         public async Task<IEnumerable<AppointmentDto>> ListAsync()
         {
-            var appointments = await _repository.GetAllAsync();
+            var appointments = await _repository.GetAllAsync(a => a.Customer);
             return appointments.Select(a => (AppointmentDto)a);
         }
 
         public async Task<AppointmentDto?> GetByIdAsync(Guid id)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var entity = await _repository.GetByIdAsync(id, a => a.Customer);
             if (entity == null) return null;
             return entity;
         }
@@ -39,16 +39,16 @@ namespace Ona.Commit.Application.Services
             if (!_currentUser.Id.HasValue)
                 throw new ValidationException("Contexto do usuário é obrigatório.");
 
-            var appointment = new Appointment
-            {
-                UserId = _currentUser.Id.Value,
-                CustomerId = request.CustomerId,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                Status = request.Status,
-            };
+            var appointment = new Appointment(
+                _currentUser.Id.Value,
+                request.CustomerId,
+                request.StartDate.ToUniversalTime(),
+                request.EndDate.ToUniversalTime());
 
-            return await _repository.CreateAsync(appointment);
+            appointment = await _repository.CreateAsync(appointment);
+            await _repository.SaveChangesAsync();
+
+            return appointment;
         }
 
         public async Task<AppointmentDto> UpdateAsync(Guid id, AppointmentUpdateRequest request)
@@ -57,14 +57,14 @@ namespace Ona.Commit.Application.Services
             if (appointment == null)
                 throw new ValidationException("Agendamento não encontrado.");
 
-            if (request.StartDate.HasValue)
-                appointment.StartDate = request.StartDate.Value;
-            if (request.EndDate.HasValue)
-                appointment.EndDate = request.EndDate.Value;
-            if (request.Status.HasValue)
-                appointment.Status = request.Status.Value;
+            if (request.StartDate.HasValue && request.EndDate.HasValue)
+                appointment.Reschedule(
+                    request.StartDate.Value.ToUniversalTime(),
+                    request.EndDate.Value.ToUniversalTime());
 
-            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+            if (request.Status.HasValue)
+                appointment.UpdateStatus(request.Status.Value);
+
             appointment = _repository.Update(appointment);
             await _repository.SaveChangesAsync();
 
@@ -77,8 +77,8 @@ namespace Ona.Commit.Application.Services
             if (appointment == null)
                 throw new ValidationException("Agendamento não encontrado.");
 
-            appointment.IsDeleted = true;
-            appointment.UpdatedAt = DateTimeOffset.UtcNow;
+            appointment.Delete();
+
             _repository.Update(appointment);
             await _repository.SaveChangesAsync();
         }

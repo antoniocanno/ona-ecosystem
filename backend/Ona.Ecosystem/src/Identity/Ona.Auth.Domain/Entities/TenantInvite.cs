@@ -1,5 +1,4 @@
 using Ona.Domain.Shared.Entities;
-using Ona.Domain.Shared.Interfaces;
 
 namespace Ona.Auth.Domain.Entities
 {
