@@ -4,7 +4,7 @@ using Ona.Commit.Application.Interfaces.Repositories;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Core.Common.Exceptions;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 
 namespace Ona.Commit.Application.Services
 {

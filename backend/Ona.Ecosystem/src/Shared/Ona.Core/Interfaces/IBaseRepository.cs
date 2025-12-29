@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace Ona.Domain.Shared.Interfaces
+namespace Ona.Core.Interfaces
 {
     public interface IBaseRepository<TEntity> where TEntity : class
     {

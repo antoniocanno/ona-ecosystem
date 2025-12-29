@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 
 namespace Ona.ServiceDefaults.Services
 {

@@ -11,9 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\Ona.Application.Shared\Ona.Application.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Ona.Application.Shared\Ona.Application.Shared.csproj" />
     <ProjectReference Include="..\..\..\Shared\Ona.Core\Ona.Core.csproj" />
-    <ProjectReference Include="..\..\..\Shared\Ona.Domain.Shared\Ona.Domain.Shared.csproj" />
     <ProjectReference Include="..\Ona.Commit.Domain\Ona.Commit.Domain.csproj" />
   </ItemGroup>
 

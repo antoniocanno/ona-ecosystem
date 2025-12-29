@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Identity;
-using Ona.Core.Common.Enums;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 
 namespace Ona.Auth.Domain.Entities
 {

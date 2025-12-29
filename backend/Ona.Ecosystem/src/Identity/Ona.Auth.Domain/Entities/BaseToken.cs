@@ -1,5 +1,5 @@
 ﻿using Ona.Core.Common.Helpers;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 
 namespace Ona.Auth.Domain.Entities
 {

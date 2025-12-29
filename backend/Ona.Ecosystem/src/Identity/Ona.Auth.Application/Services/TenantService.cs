@@ -7,7 +7,7 @@ using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Domain.Entities;
 using Ona.Core.Common.Enums;
 using Ona.Core.Common.Exceptions;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 
 namespace Ona.Auth.Application.Services
 {

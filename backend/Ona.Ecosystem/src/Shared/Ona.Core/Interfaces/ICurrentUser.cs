@@ -1,4 +1,4 @@
-namespace Ona.Domain.Shared.Interfaces
+namespace Ona.Core.Interfaces
 {
     public interface ICurrentUser
     {

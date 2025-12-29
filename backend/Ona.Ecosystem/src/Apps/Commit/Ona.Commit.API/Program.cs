@@ -1,3 +1,5 @@
+using Hangfire;
+using Hangfire.PostgreSql;
 using Ona.Commit.API.Extensions;
 using Ona.Commit.Infrastructure.Data;
 using Ona.Commit.Infrastructure.Extensions;
@@ -27,6 +29,13 @@ namespace Ona.Commit.API
             builder.Services.AddSwaggerGen();
 
             builder.Services.AddInfrastructure(builder.Configuration);
+
+            builder.Services.AddHangfire(configuration => configuration
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("commit-db"))));
+
 
             var app = builder.Build();
 

@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Apps\Commit\Ona.Commit.API\Ona.Commit.API.csproj" />
+    <ProjectReference Include="..\..\Apps\Commit\Ona.Commit.Worker.Hangfire\Ona.Commit.Worker.Hangfire.csproj" />
     <ProjectReference Include="..\..\Identity\Ona.Auth.API\Ona.Auth.API.csproj" />
   </ItemGroup>
 

@@ -20,7 +20,7 @@ namespace Ona.Commit.API.Controllers
         }
 
         [HttpGet]
-        [AuthorizeRoles(Role.Operator)]
+        [AuthorizeRoles(Role.ReadOnly)]
         public async Task<IActionResult> GetAll()
         {
             var customers = await _customerAppService.ListAsync();
@@ -28,7 +28,7 @@ namespace Ona.Commit.API.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        [AuthorizeRoles(Role.Operator)]
+        [AuthorizeRoles(Role.ReadOnly)]
         public async Task<IActionResult> GetById(Guid id)
         {
             var customer = await _customerAppService.GetByIdAsync(id);

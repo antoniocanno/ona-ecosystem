@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Http;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 using System.Security.Claims;
 
 namespace Ona.ServiceDefaults.Services

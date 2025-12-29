@@ -23,8 +23,13 @@ var authApi = builder.AddProject<Projects.Ona_Auth_API>("ona-auth-api")
                      .WaitFor(postgres)
                      .WithReference(redis);
 
-var commitApi = builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
+var worker = builder.AddProject<Projects.Ona_Commit_Worker_Hangfire>("ona-commit-worker-hangfire")
+                    .WithReference(commitDb)
+                    .WaitFor(postgres);
+
+builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
                        .WithReference(authApi)
+                       .WithReference(worker)
                        .WithEnvironment("JwtSettings:Secret", jwtSecret)
                        .WithEnvironment("JwtSettings:Issuer", jwtIssuer)
                        .WithEnvironment("JwtSettings:Audience", jwtAudience)

@@ -8,7 +8,7 @@ using Ona.Auth.Domain.Constants;
 using Ona.Auth.Domain.Entities;
 using Ona.Auth.Domain.Interfaces.Services;
 using Ona.Core.Common.Exceptions;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 
 namespace Ona.Auth.Application.Services
 {

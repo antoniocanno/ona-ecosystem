@@ -1,5 +1,5 @@
 ﻿using Ona.Commit.Domain.Enums;
-using Ona.Domain.Shared.Entities;
+using Ona.Core.Entities;
 
 namespace Ona.Commit.Domain.Entities
 {

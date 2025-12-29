@@ -11,17 +11,22 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.22">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <TreatAsUsed>true</TreatAsUsed>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.22">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <TreatAsUsed>true</TreatAsUsed>
     </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4">
+      <TreatAsUsed>true</TreatAsUsed>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Orchestration\Ona.ServiceDefaults\Ona.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Ona.Commit.Infrastructure\Ona.Commit.Infrastructure.csproj" />
+    <ProjectReference Include="..\Ona.Commit.Worker.Hangfire\Ona.Commit.Worker.Hangfire.csproj" />
   </ItemGroup>
 
 </Project>

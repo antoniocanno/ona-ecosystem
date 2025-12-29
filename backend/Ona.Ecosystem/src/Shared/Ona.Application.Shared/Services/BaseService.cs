@@ -1,6 +1,6 @@
 ﻿using Ona.Core.Common.Exceptions;
-using Ona.Domain.Shared.Entities;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Entities;
+using Ona.Core.Interfaces;
 using System.Linq.Expressions;
 
 namespace Ona.Application.Shared.Services

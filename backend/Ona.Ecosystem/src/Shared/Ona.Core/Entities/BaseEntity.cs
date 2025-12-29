@@ -1,6 +1,6 @@
 ﻿using Ona.Core.Common.Helpers;
 
-namespace Ona.Domain.Shared.Entities
+namespace Ona.Core.Entities
 {
     public abstract class BaseEntity
     {

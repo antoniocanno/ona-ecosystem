@@ -1,6 +1,6 @@
-﻿using Ona.Domain.Shared.Interfaces;
+﻿using Ona.Core.Interfaces;
 
-namespace Ona.Domain.Shared.Entities
+namespace Ona.Core.Entities
 {
     public abstract class TenantEntity : BaseEntity, ITenantEntity
     {

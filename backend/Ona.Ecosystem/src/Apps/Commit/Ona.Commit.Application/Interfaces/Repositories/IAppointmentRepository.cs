@@ -1,5 +1,5 @@
 ﻿using Ona.Commit.Domain.Entities;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 
 namespace Ona.Commit.Application.Interfaces.Repositories
 {

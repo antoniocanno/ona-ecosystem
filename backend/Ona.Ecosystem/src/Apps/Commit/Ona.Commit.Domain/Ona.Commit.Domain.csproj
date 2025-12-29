@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Shared\Ona.Domain.Shared\Ona.Domain.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Ona.Core\Ona.Core.csproj" />
   </ItemGroup>
 
 </Project>

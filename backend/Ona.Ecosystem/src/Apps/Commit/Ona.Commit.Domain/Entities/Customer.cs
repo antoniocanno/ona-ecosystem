@@ -1,6 +1,6 @@
 ﻿using Ona.Core.Common.Exceptions;
-using Ona.Domain.Shared.Entities;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Entities;
+using Ona.Core.Interfaces;
 
 namespace Ona.Commit.Domain.Entities
 {
@@ -15,42 +15,49 @@ namespace Ona.Commit.Domain.Entities
         public string? InternalNotes { get; private set; }
         public int TotalNoShows { get; private set; }
 
-        public ICollection<Appointment> Appointments { get; private set; }
+        public ICollection<Appointment>? Appointments { get; private set; }
 
         protected Customer() { }
 
         public Customer(Guid userId, string name, string phoneNumber, string? email, string? internalNotes)
         {
             if (userId == Guid.Empty)
-                throw new ValidationException("O cliente deve ter um usuário vinculado.");
+                throw new ValidationException("Usuário inválido.");
 
-            if (string.IsNullOrEmpty(name))
-                throw new ValidationException("O cliente deve ter um nome.");
-
-            if (string.IsNullOrEmpty(phoneNumber))
-                throw new ValidationException("O cliente deve ter um telefone.");
+            SetName(name);
+            SetPhoneNumber(phoneNumber);
 
             UserId = userId;
-            Name = name;
-            PhoneNumber = phoneNumber;
             Email = email;
             InternalNotes = internalNotes;
         }
-        public void UpdateName(string name)
+
+        private void SetPhoneNumber(string phoneNumber)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumber))
+                throw new ValidationException("O telefone do cliente é obrigatório.");
+
+            var digitsOnly = new string(phoneNumber.Where(char.IsDigit).ToArray());
+            PhoneNumber = $"+{digitsOnly}";
+        }
+
+        private void SetName(string name)
         {
             if (string.IsNullOrEmpty(name))
-                throw new ValidationException("O cliente deve ter um nome.");
+                throw new ValidationException("O nome do cliente é obrigatório.");
 
             Name = name;
+        }
+
+        public void UpdateName(string name)
+        {
+            SetName(name);
             Update();
         }
 
         public void UpdatePhoneNumber(string phoneNumber)
         {
-            if (string.IsNullOrEmpty(phoneNumber))
-                throw new ValidationException("O cliente deve ter um telefone.");
-
-            PhoneNumber = phoneNumber;
+            SetPhoneNumber(phoneNumber);
             Update();
         }
 
@@ -65,5 +72,7 @@ namespace Ona.Commit.Domain.Entities
             InternalNotes = internalNotes;
             Update();
         }
+
+        public void IncrementTotalNoShows() => TotalNoShows++;
     }
 }

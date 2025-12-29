@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Ona.Domain.Shared.Interfaces;
+using Ona.Core.Interfaces;
 using Ona.ServiceDefaults.ApiExtensions;
 using Ona.ServiceDefaults.Services;
 using OpenTelemetry;
