@@ -12,13 +12,16 @@ namespace Ona.Commit.Application.Services
     {
         private readonly ICurrentUser _currentUser;
         private readonly IAppointmentRepository _repository;
+        private readonly ICalendarService _calendarService;
 
         public AppointmentAppService(
             ICurrentUser currentUser,
-            IAppointmentRepository repository)
+            IAppointmentRepository repository,
+            ICalendarService calendarService)
         {
             _currentUser = currentUser;
             _repository = repository;
+            _calendarService = calendarService;
         }
 
         public async Task<IEnumerable<AppointmentDto>> ListAsync()
@@ -48,6 +51,8 @@ namespace Ona.Commit.Application.Services
             appointment = await _repository.CreateAsync(appointment);
             await _repository.SaveChangesAsync();
 
+            await _calendarService.CreateAppointmentEventAsync(appointment);
+
             return appointment;
         }
 
@@ -68,6 +73,8 @@ namespace Ona.Commit.Application.Services
             appointment = _repository.Update(appointment);
             await _repository.SaveChangesAsync();
 
+            await _calendarService.UpdateAppointmentEventAsync(appointment);
+
             return appointment;
         }
 
@@ -81,6 +88,8 @@ namespace Ona.Commit.Application.Services
 
             _repository.Update(appointment);
             await _repository.SaveChangesAsync();
+
+            await _calendarService.DeleteAppointmentEventAsync(appointment);
         }
     }
 }

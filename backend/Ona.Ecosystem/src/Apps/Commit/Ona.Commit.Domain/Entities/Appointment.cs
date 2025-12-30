@@ -15,6 +15,7 @@ namespace Ona.Commit.Domain.Entities
         public DateTimeOffset EndDate { get; private set; }
 
         public AppointmentStatus Status { get; private set; } = AppointmentStatus.Pending;
+        public int? RiskScore { get; private set; }
 
         public string? ExternalCalendarEventId { get; private set; }
 
@@ -87,6 +88,14 @@ namespace Ona.Commit.Domain.Entities
         {
             Status = AppointmentStatus.NoShow;
             Update();
+        }
+
+        public void SetRiskScore(int riskScore)
+        {
+            if (riskScore < 0 || riskScore > 100)
+                throw new ValidationException("O score de risco deve estar entre 0 e 100.");
+
+            RiskScore = riskScore;
         }
     }
 }

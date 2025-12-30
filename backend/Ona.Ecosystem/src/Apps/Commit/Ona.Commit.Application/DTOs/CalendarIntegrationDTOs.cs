@@ -1,0 +1,25 @@
+using Ona.Commit.Domain.Entities;
+
+namespace Ona.Commit.Application.DTOs
+{
+    public class InitiateCalendarAuthRequest
+    {
+        public Guid CustomerId { get; set; }
+        public CalendarProvider Provider { get; set; }
+    }
+
+    public class CompleteCalendarAuthRequest
+    {
+        public Guid CustomerId { get; set; }
+        public CalendarProvider Provider { get; set; }
+        public string Code { get; set; } = string.Empty;
+    }
+
+    public class CalendarIntegrationResponse
+    {
+        public Guid Id { get; set; }
+        public string Provider { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public string? Email { get; set; }
+    }
+}

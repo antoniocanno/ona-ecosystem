@@ -11,6 +11,8 @@ namespace Ona.Commit.Infrastructure.Data
 
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<CalendarIntegration> CalendarIntegrations { get; set; }
+        public DbSet<ExternalCalendarEventMapping> ExternalCalendarEventMappings { get; set; }
 
         public CommitDbContext() : base() { }
 
