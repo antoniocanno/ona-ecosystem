@@ -7,6 +7,10 @@ namespace Ona.Auth.Domain.Entities
     {
         public Guid TenantId { get; private set; }
 
+        public UserTenantRole() : base()
+        {
+        }
+
         public UserTenantRole(Guid userId, Guid roleId, Guid tenantId)
         {
             UserId = userId;

@@ -9,7 +9,10 @@ namespace Ona.Commit.Domain.Entities
     {
         public Guid UserId { get; private set; }
         public Guid CustomerId { get; private set; }
-        public Customer Customer { get; private set; } = null!;
+        public Customer? Customer { get; private set; } = null!;
+
+        public string? Summary { get; private set; }
+        public string? Description { get; private set; }
 
         public DateTimeOffset StartDate { get; private set; }
         public DateTimeOffset EndDate { get; private set; }
@@ -23,11 +26,20 @@ namespace Ona.Commit.Domain.Entities
 
         protected Appointment() { }
 
-        public Appointment(Guid userId, Guid customerId, DateTimeOffset startDate, DateTimeOffset endDate)
+        public Appointment(Guid customerId, string summary, string description, DateTimeOffset startDate, DateTimeOffset endDate)
         {
-            SetUserId(userId);
             SetCustomerId(customerId);
+            SetSummary(summary);
+            SetDescription(description);
             SetStartAndEndDate(startDate, endDate);
+        }
+
+        public void SetUserId(Guid userId)
+        {
+            if (userId == Guid.Empty)
+                throw new ValidationException("O agendamento deve ter um usuário vinculado.");
+
+            UserId = userId;
         }
 
         private void SetCustomerId(Guid customerId)
@@ -38,12 +50,20 @@ namespace Ona.Commit.Domain.Entities
             CustomerId = customerId;
         }
 
-        private void SetUserId(Guid userId)
+        public void SetSummary(string summary)
         {
-            if (userId == Guid.Empty)
-                throw new ValidationException("O agendamento deve ter um usuário vinculado.");
+            if (string.IsNullOrEmpty(summary))
+                throw new ValidationException("O agendamento deve ter um resumo.");
 
-            UserId = userId;
+            Summary = summary;
+        }
+
+        public void SetDescription(string description)
+        {
+            if (string.IsNullOrEmpty(description))
+                throw new ValidationException("O agendamento deve ter uma descrição.");
+
+            Description = description;
         }
 
         private void SetStartAndEndDate(DateTimeOffset startDate, DateTimeOffset endDate)
@@ -75,6 +95,18 @@ namespace Ona.Commit.Domain.Entities
                 Notifications = [];
 
             Status = status;
+            Update();
+        }
+
+        public void UpdateSummary(string summary)
+        {
+            SetSummary(summary);
+            Update();
+        }
+
+        public void UpdateDescription(string description)
+        {
+            SetDescription(description);
             Update();
         }
 

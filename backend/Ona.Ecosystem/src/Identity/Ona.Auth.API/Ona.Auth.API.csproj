@@ -17,6 +17,7 @@
     <ProjectReference Include="..\Ona.Auth.Application\Ona.Auth.Application.csproj" />
     <ProjectReference Include="..\Ona.Auth.Infrastructure\Ona.Auth.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Orchestration\Ona.ServiceDefaults\Ona.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\Shared\Ona.Application.Shared\Ona.Application.Shared.csproj" />
   </ItemGroup>
 
 </Project>

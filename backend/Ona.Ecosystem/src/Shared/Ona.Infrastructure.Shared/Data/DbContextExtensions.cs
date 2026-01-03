@@ -1,6 +1,6 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Ona.Core.Interfaces;
-using System.Linq.Expressions;
 
 namespace Ona.Infrastructure.Shared.Data
 {
@@ -57,6 +57,20 @@ namespace Ona.Infrastructure.Shared.Data
                 if (entry.State == EntityState.Added && entry.Entity.TenantId == Guid.Empty)
                 {
                     entry.Entity.SetTenantId(tenantId.Value);
+                }
+            }
+        }
+
+        public static void SetUserId(this DbContext context, ICurrentUser? currentUser)
+        {
+            var userId = currentUser?.Id;
+            if (!userId.HasValue) return;
+
+            foreach (var entry in context.ChangeTracker.Entries<IUserEntity>())
+            {
+                if (entry.State == EntityState.Added && entry.Entity.UserId == Guid.Empty)
+                {
+                    entry.Entity.SetUserId(userId.Value);
                 }
             }
         }

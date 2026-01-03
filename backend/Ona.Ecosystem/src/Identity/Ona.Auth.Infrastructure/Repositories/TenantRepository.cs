@@ -1,6 +1,6 @@
 ﻿using Ona.Auth.Application.Interfaces.Repositories;
-using Ona.Auth.Domain.Entities;
 using Ona.Auth.Infrastructure.Data;
+using Ona.Core.Entities;
 using Ona.Infrastructure.Shared.Repositories;
 
 namespace Ona.Auth.Infrastructure.Repositories

@@ -1,4 +1,4 @@
-﻿using Ona.Auth.Domain.Entities;
+﻿using Ona.Core.Entities;
 
 namespace Ona.Auth.Application.Interfaces.Repositories
 {

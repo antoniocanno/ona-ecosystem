@@ -1,8 +1,10 @@
+using System.Text.Json;
 using Ona.Commit.Application.DTOs;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces;
 using Ona.Commit.Domain.Interfaces.Repositories;
+using Ona.Core.Common.Exceptions;
 
 namespace Ona.Commit.Application.Services
 {
@@ -34,64 +36,43 @@ namespace Ona.Commit.Application.Services
             {
                 CalendarProvider.Google => _googleService.GetAuthUrl(),
                 CalendarProvider.Outlook => _outlookService.GetAuthUrl(),
-                _ => throw new ArgumentException("Invalid provider")
+                _ => throw new ValidationException("Invalid provider")
             };
         }
 
         public async Task<CalendarIntegrationResponse> CompleteAuthAsync(CompleteCalendarAuthRequest request)
         {
-            string accessToken, refreshToken;
-            DateTime expiry;
+            var authData = request.Provider switch
+            {
+                CalendarProvider.Google => await _googleService.ExchangeCodeForTokenAsync(request.Code, request.State),
+                CalendarProvider.Outlook => await _outlookService.ExchangeCodeForTokenAsync(request.Code, request.State),
+                _ => throw new ValidationException("Invalid provider")
+            };
 
-            if (request.Provider == CalendarProvider.Google)
+            var integration = await _repository.GetByCustomerAndProviderAsync(request.CustomerId, request.Provider);
+
+            if (integration != null)
             {
-                (accessToken, refreshToken, expiry) = await _googleService.ExchangeCodeForTokenAsync(request.Code);
-            }
-            else if (request.Provider == CalendarProvider.Outlook)
-            {
-                (accessToken, refreshToken, expiry) = await _outlookService.ExchangeCodeForTokenAsync(request.Code);
+                integration.AccessToken = authData.AccessToken;
+                integration.EncryptedRefreshToken = authData.EncryptedRefreshToken;
+                integration.TokenExpiry = authData.TokenExpiry;
+                integration.TokenIssuedAtUtc = authData.TokenIssuedAtUtc;
+                integration.Email = authData.Email;
+                integration.ExternalEmailAddress = authData.ExternalEmailAddress;
+                integration.ExternalCalendarId = authData.ExternalCalendarId;
+
+                _repository.Update(integration);
             }
             else
             {
-                throw new ArgumentException("Invalid provider");
+                integration = authData;
+                integration.CustomerId = request.CustomerId;
+                integration.IsActive = true;
+
+                await _repository.CreateAsync(integration);
             }
 
-            var existing = await _repository.GetByCustomerAndProviderAsync(request.CustomerId, request.Provider);
-            if (existing != null)
-            {
-                existing.AccessToken = accessToken;
-                existing.EncryptedRefreshToken = _cryptoService.Encrypt(refreshToken);
-                existing.TokenExpiry = expiry;
-                _repository.Update(existing);
-                await _repository.SaveChangesAsync();
-
-                // Trigger Sync Subscription on Re-Auth as well? Probably good idea.
-                await _calendarService.SubscribeToNotificationsAsync(request.CustomerId);
-
-                return new CalendarIntegrationResponse
-                {
-                    Id = existing.Id,
-                    Provider = existing.Provider.ToString(),
-                    IsActive = existing.IsActive,
-                    Email = existing.Email
-                };
-            }
-
-            // Create new integration
-            var integration = new CalendarIntegration
-            {
-                CustomerId = request.CustomerId,
-                Provider = request.Provider,
-                AccessToken = accessToken,
-                EncryptedRefreshToken = _cryptoService.Encrypt(refreshToken),
-                TokenExpiry = expiry,
-                IsActive = true
-            };
-
-            await _repository.CreateAsync(integration);
             await _repository.SaveChangesAsync();
-
-            // Trigger Inbound Sync Subscription
             await _calendarService.SubscribeToNotificationsAsync(request.CustomerId);
 
             return new CalendarIntegrationResponse

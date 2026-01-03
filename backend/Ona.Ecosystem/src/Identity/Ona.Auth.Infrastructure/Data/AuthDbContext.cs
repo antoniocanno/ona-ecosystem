@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Ona.Auth.Domain.Entities;
+using Ona.Core.Entities;
 using Ona.Core.Interfaces;
 using Ona.Infrastructure.Shared.Data;
 
@@ -42,9 +43,21 @@ namespace Ona.Auth.Infrastructure.Data
             ConfigureUnlockUserTokenEntity(modelBuilder);
             ConfigureUserTenantRole(modelBuilder);
             ConfigureTenantInviteEntity(modelBuilder);
+            ConfigureTenantEntity(modelBuilder);
 
             modelBuilder.ApplyTenantFilters(_currentTenant);
             SetTenantQueryFilter(modelBuilder);
+        }
+
+        private static void ConfigureTenantEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Tenant>(entity =>
+            {
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.Name).IsRequired();
+                entity.Property(t => t.Domain).IsRequired();
+                entity.Property(t => t.TimeZone).IsRequired().HasDefaultValue("America/Sao_Paulo");
+            });
         }
 
         private static void ConfigureTablesNames(ModelBuilder modelBuilder)
@@ -195,19 +208,8 @@ namespace Ona.Auth.Infrastructure.Data
 
         public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            SetTenantId();
+            this.SetTenantId(_currentTenant);
             return base.SaveChangesAsync(cancellationToken);
-        }
-
-        private void SetTenantId()
-        {
-            foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
-            {
-                if (entry.State == EntityState.Added && entry.Entity.TenantId == Guid.Empty && _currentTenant?.Id.HasValue == true)
-                {
-                    entry.Entity.SetTenantId(_currentTenant!.Id.Value);
-                }
-            }
         }
 
         private void SetTenantQueryFilter(ModelBuilder modelBuilder)

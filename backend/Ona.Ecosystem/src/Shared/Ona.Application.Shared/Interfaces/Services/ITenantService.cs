@@ -1,8 +1,7 @@
-using Ona.Auth.Application.DTOs.Request;
-using Ona.Auth.Application.DTOs.Responses;
-using Ona.Auth.Domain.Entities;
+using Ona.Application.Shared.DTOs.Tenants;
+using Ona.Core.Entities;
 
-namespace Ona.Auth.Application.Interfaces.Services
+namespace Ona.Application.Shared.Interfaces.Services
 {
     public interface ITenantService
     {

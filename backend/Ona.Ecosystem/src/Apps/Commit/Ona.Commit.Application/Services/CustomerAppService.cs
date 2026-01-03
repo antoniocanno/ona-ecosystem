@@ -37,7 +37,7 @@ namespace Ona.Commit.Application.Services
 
         public async Task<CustomerDto> CreateAsync(CreateCustomerRequest request)
         {
-            if (!_currentUser.Id.HasValue)
+            if (_currentUser.Id == Guid.Empty)
                 throw new ValidationException("Contexto do usuário é obrigatório.");
 
             var customer = new Customer(

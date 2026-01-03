@@ -39,12 +39,13 @@ namespace Ona.Commit.Application.Services
 
         public async Task<AppointmentDto> CreateAsync(CreateAppointmentRequest request)
         {
-            if (!_currentUser.Id.HasValue)
+            if (_currentUser.Id == Guid.Empty)
                 throw new ValidationException("Contexto do usuário é obrigatório.");
 
             var appointment = new Appointment(
-                _currentUser.Id.Value,
                 request.CustomerId,
+                request.Summary,
+                request.Description,
                 request.StartDate.ToUniversalTime(),
                 request.EndDate.ToUniversalTime());
 
@@ -69,6 +70,12 @@ namespace Ona.Commit.Application.Services
 
             if (request.Status.HasValue)
                 appointment.UpdateStatus(request.Status.Value);
+
+            if (!string.IsNullOrEmpty(request.Summary))
+                appointment.UpdateSummary(request.Summary);
+
+            if (!string.IsNullOrEmpty(request.Description))
+                appointment.UpdateDescription(request.Description);
 
             appointment = _repository.Update(appointment);
             await _repository.SaveChangesAsync();

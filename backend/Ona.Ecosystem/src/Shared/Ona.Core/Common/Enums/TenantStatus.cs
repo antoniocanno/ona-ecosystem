@@ -1,4 +1,4 @@
-namespace Ona.Auth.Domain.Entities
+namespace Ona.Core.Common.Enums
 {
     public enum TenantStatus
     {

@@ -1,22 +1,51 @@
+﻿using System.Text.Json;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Flows;
+using Google.Apis.Auth.OAuth2.Requests;
+using Google.Apis.Auth.OAuth2.Responses;
+using Google.Apis.Calendar.v3;
+using Google.Apis.Calendar.v3.Data;
+using Google.Apis.Services;
+using Google.Apis.Util.Store;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Ona.Application.Shared.Interfaces.Services;
+using Ona.Commit.Application.DTOs;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces;
+using Ona.Core.Common.Exceptions;
+using Ona.Core.Interfaces;
 
 namespace Ona.Commit.Infrastructure.Integrations
 {
     public class GoogleCalendarService : IGoogleCalendarService
     {
+        private readonly ICurrentUser _currentUser;
+        private readonly ICurrentTenant _currentTenant;
+        private readonly ILogger<GoogleCalendarService> _logger;
         private readonly IConfiguration _configuration;
         private readonly string _clientId;
         private readonly string _clientSecret;
         private readonly string _redirectUri;
         private readonly ICryptographyService _cryptoService;
+        private readonly ITenantService _tenantService;
+        private static readonly string[] Scopes = { CalendarService.Scope.Calendar };
 
-        public GoogleCalendarService(IConfiguration configuration, ICryptographyService cryptoService)
+        public GoogleCalendarService(
+            IConfiguration configuration,
+            ICryptographyService cryptoService,
+            ILogger<GoogleCalendarService> logger,
+            ITenantService tenantService,
+            ICurrentUser currentUser,
+            ICurrentTenant currentTenant)
         {
             _configuration = configuration;
             _cryptoService = cryptoService;
+            _logger = logger;
+            _tenantService = tenantService;
+            _currentUser = currentUser;
+            _currentTenant = currentTenant;
             _clientId = _configuration["Google:ClientId"] ?? "";
             _clientSecret = _configuration["Google:ClientSecret"] ?? "";
             _redirectUri = _configuration["Google:RedirectUri"] ?? "";
@@ -24,75 +53,410 @@ namespace Ona.Commit.Infrastructure.Integrations
 
         public string GetAuthUrl()
         {
-            // Placeholder for Google Auth URL generation
-            // Needs generic scope for calendar
-            var scope = "https://www.googleapis.com/auth/calendar";
-            return $"https://accounts.google.com/o/oauth2/v2/auth?client_id={_clientId}&redirect_uri={_redirectUri}&response_type=code&scope={scope}&access_type=offline&prompt=consent";
+            var flow = new OfflineGoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = new ClientSecrets
+                {
+                    ClientId = _clientId,
+                    ClientSecret = _clientSecret
+                },
+                Scopes = Scopes
+            });
+
+            var stateDto = new StateDto
+            {
+                UserId = _currentUser.Id.Value,
+                TenantId = _currentTenant.Id.Value,
+                Nonce = Guid.NewGuid()
+            };
+
+            var state = _cryptoService.Encrypt(JsonSerializer.Serialize(stateDto));
+
+            var url = flow.CreateAuthorizationCodeRequest(_redirectUri);
+            url.State = state;
+            return url.Build().AbsoluteUri;
         }
 
-        public async Task<(string AccessToken, string RefreshToken, DateTime Expiry)> ExchangeCodeForTokenAsync(string code)
+        public async Task<CalendarIntegration> ExchangeCodeForTokenAsync(string code, string state)
         {
-            // Placeholder for exchanging code for token
-            // In a real implementation this would make an HTTP POST to https://oauth2.googleapis.com/token
+            try
+            {
+                if (string.IsNullOrEmpty(state))
+                    throw new ValidationException("Estado do OAuth2 ausente.");
 
-            // Mocking for now as we don't have real credentials
-            await Task.Delay(100);
-            return ("mock_access_token", "mock_refresh_token", DateTime.UtcNow.AddHours(1));
+                var decryptedState = _cryptoService.Decrypt(state);
+                var stateDto = JsonSerializer.Deserialize<StateDto>(decryptedState);
+
+                if (stateDto == null)
+                    throw new ValidationException("Formato inválido do estado do OAuth2.");
+
+                if (stateDto.TenantId != _currentTenant.Id)
+                    throw new UnauthorizedAccessException("Incompatibilidade de tenant no estado OAuth2.");
+
+                if (stateDto.UserId != _currentUser.Id)
+                    throw new UnauthorizedAccessException("Incompatibilidade de usuário no estado OAuth2.");
+
+                var flow = new OfflineGoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = new ClientSecrets
+                    {
+                        ClientId = _clientId,
+                        ClientSecret = _clientSecret
+                    },
+                    Scopes = Scopes
+                });
+
+                var tokenResponse = await flow.ExchangeCodeForTokenAsync(
+                    userId: _currentUser.Id.ToString(),
+                    code: code,
+                    redirectUri: _redirectUri,
+                    CancellationToken.None
+                );
+
+                var expiry = tokenResponse.IssuedUtc.AddSeconds(tokenResponse.ExpiresInSeconds ?? 3600);
+
+                _logger.LogInformation("Token do Google Calendar obtido com sucesso via SDK. Expira em: {Expiry}", expiry);
+
+                return new CalendarIntegration
+                {
+                    AccessToken = tokenResponse.AccessToken,
+                    EncryptedRefreshToken = _cryptoService.Encrypt(tokenResponse.RefreshToken),
+                    TokenExpiry = expiry,
+                    Provider = CalendarProvider.Google,
+                    TokenIssuedAtUtc = tokenResponse.IssuedUtc
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao trocar código por token do Google usando SDK");
+                throw;
+            }
         }
 
         public async Task<string> CreateEventAsync(CalendarIntegration integration, Appointment appointment)
         {
-            // Implementation would use Google Calendar API
-            await Task.Delay(100);
-            return $"google_{Guid.NewGuid()}";
+            try
+            {
+                var service = await GetCalendarServiceAsync(integration);
+
+                var timeZone = await GetTenantTimeZoneAsync(integration.TenantId);
+
+                var newEvent = new Event
+                {
+                    Summary = appointment.Summary,
+                    Description = appointment.Description,
+                    Start = new EventDateTime
+                    {
+                        DateTimeDateTimeOffset = appointment.StartDate,
+                        TimeZone = timeZone
+                    },
+                    End = new EventDateTime
+                    {
+                        DateTimeDateTimeOffset = appointment.EndDate,
+                        TimeZone = timeZone
+                    },
+                    Reminders = new Event.RemindersData
+                    {
+                        UseDefault = false,
+                        Overrides =
+                        [
+                            new() { Method = "popup", Minutes = 30 }
+                        ]
+                    },
+                    ExtendedProperties = new Event.ExtendedPropertiesData
+                    {
+                        Private__ = new Dictionary<string, string>
+                        {
+                            { "appointmentId", appointment.Id.ToString() },
+                            { "tenantId", integration.TenantId.ToString() }
+                        }
+                    }
+                };
+
+                var request = service.Events.Insert(newEvent, "primary");
+                var createdEvent = await request.ExecuteAsync();
+
+                _logger.LogInformation(
+                    "Evento criado no Google Calendar. EventId: {EventId}, AppointmentId: {AppointmentId}",
+                    createdEvent.Id,
+                    appointment.Id
+                );
+
+                return createdEvent.Id;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao criar evento no Google Calendar para Appointment {AppointmentId}", appointment.Id);
+                throw;
+            }
         }
 
         public async Task UpdateEventAsync(CalendarIntegration integration, Appointment appointment, string externalEventId)
         {
-            // Implementation would use Google Calendar API
-            await Task.Delay(100);
+            try
+            {
+                var service = await GetCalendarServiceAsync(integration);
+
+                var eventToUpdate = await service.Events.Get("primary", externalEventId).ExecuteAsync();
+
+                var timeZone = await GetTenantTimeZoneAsync(integration.TenantId);
+
+                eventToUpdate.Summary = appointment.Summary;
+                eventToUpdate.Description = appointment.Description;
+                eventToUpdate.Start = new EventDateTime
+                {
+                    DateTimeDateTimeOffset = appointment.StartDate,
+                    TimeZone = timeZone
+                };
+                eventToUpdate.End = new EventDateTime
+                {
+                    DateTimeDateTimeOffset = appointment.EndDate,
+                    TimeZone = timeZone
+                };
+
+                await service.Events.Update(eventToUpdate, "primary", externalEventId).ExecuteAsync();
+
+                _logger.LogInformation("Evento atualizado no Google Calendar. EventId: {EventId}", externalEventId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao atualizar evento {EventId} no Google Calendar", externalEventId);
+                throw;
+            }
         }
 
         public async Task DeleteEventAsync(CalendarIntegration integration, string externalEventId)
         {
-            // Implementation would use Google Calendar API
-            await Task.Delay(100);
+            try
+            {
+                var service = await GetCalendarServiceAsync(integration);
+                await service.Events.Delete("primary", externalEventId).ExecuteAsync();
+
+                _logger.LogInformation("Evento deletado do Google Calendar. EventId: {EventId}", externalEventId);
+            }
+            catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("Evento {EventId} não encontrado no Google Calendar (já deletado?)", externalEventId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao deletar evento {EventId} do Google Calendar", externalEventId);
+                throw;
+            }
         }
 
         public async Task<string> GetValidAccessTokenAsync(CalendarIntegration integration)
         {
-            if (integration.AccessToken != null && integration.TokenExpiry > DateTime.UtcNow.AddMinutes(5))
+            if (!string.IsNullOrEmpty(integration.AccessToken) &&
+                integration.TokenExpiry > DateTime.UtcNow.AddMinutes(5))
             {
                 return integration.AccessToken;
             }
 
-            var refreshToken = _cryptoService.Decrypt(integration.EncryptedRefreshToken);
-            // Mock refresh call
-            await Task.Delay(100);
+            return await RefreshAccessTokenAsync(integration);
+        }
 
-            integration.AccessToken = $"new_google_token_{Guid.NewGuid()}";
-            integration.TokenExpiry = DateTime.UtcNow.AddHours(1);
+        private async Task<string> RefreshAccessTokenAsync(CalendarIntegration integration)
+        {
+            try
+            {
+                var refreshToken = _cryptoService.Decrypt(integration.EncryptedRefreshToken);
 
-            return integration.AccessToken;
+                var flow = new OfflineGoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+                {
+                    ClientSecrets = new ClientSecrets
+                    {
+                        ClientId = _clientId,
+                        ClientSecret = _clientSecret
+                    },
+                    Scopes = Scopes
+                });
+
+                var newToken = await flow.RefreshTokenAsync("user", refreshToken, CancellationToken.None);
+
+                integration.AccessToken = newToken.AccessToken;
+                integration.TokenExpiry = newToken.IssuedUtc.AddSeconds(newToken.ExpiresInSeconds ?? 3600);
+
+                _logger.LogInformation("Token do Google Calendar renovado com sucesso via SDK");
+
+                return integration.AccessToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao renovar token do Google Calendar usando SDK");
+                throw;
+            }
         }
 
         public async Task SubscribeToNotificationsAsync(CalendarIntegration integration, string webhookUrl)
         {
-            // Placeholder: Call Google API to watch channel
-            await Task.Delay(100);
+            try
+            {
+                var service = await GetCalendarServiceAsync(integration);
 
-            // In real logic, we get these back:
-            integration.ExternalResourceId = $"res_{Guid.NewGuid()}";
-            integration.ExternalChannelId = $"chan_{Guid.NewGuid()}";
-            // We should save integration changes in the caller (CalendarService) or here? 
-            // Better to let caller handle persistence if possible, but here we are modifying the entity ref.
+                var channelId = Guid.NewGuid().ToString();
+                var channel = new Channel
+                {
+                    Id = channelId,
+                    Type = "web_hook",
+                    Address = webhookUrl,
+                    Expiration = DateTimeOffset.UtcNow.AddDays(7).ToUnixTimeMilliseconds()
+                };
+
+                var request = service.Events.Watch(channel, "primary");
+                var response = await request.ExecuteAsync();
+
+                integration.ExternalChannelId = response.Id;
+                integration.ExternalResourceId = response.ResourceId;
+
+                _logger.LogInformation(
+                    "Webhook registrado no Google Calendar. ChannelId: {ChannelId}, ResourceId: {ResourceId}",
+                    response.Id,
+                    response.ResourceId
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao registrar webhook no Google Calendar");
+                throw;
+            }
         }
 
-        public async Task<IEnumerable<Application.DTOs.ExternalEventDto>> GetChangedEventsAsync(CalendarIntegration integration)
+        public async Task<IEnumerable<ExternalEventDto>> GetChangedEventsAsync(CalendarIntegration integration)
         {
-            // Placeholder: Fetch incremental changes using SyncToken
-            await Task.Delay(100);
-            return new List<Application.DTOs.ExternalEventDto>();
+            try
+            {
+                var service = await GetCalendarServiceAsync(integration);
+                var events = new List<ExternalEventDto>();
+
+                var request = service.Events.List("primary");
+                request.MaxResults = 100;
+                request.SingleEvents = true;
+                request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+
+                if (!string.IsNullOrEmpty(integration.SyncToken))
+                {
+                    request.SyncToken = integration.SyncToken;
+                }
+                else
+                {
+                    request.TimeMinDateTimeOffset = DateTime.UtcNow.AddDays(-30);
+                }
+
+                Events eventsFeed;
+                do
+                {
+                    eventsFeed = await request.ExecuteAsync();
+
+                    if (eventsFeed.Items != null)
+                    {
+                        foreach (var eventItem in eventsFeed.Items)
+                        {
+                            events.Add(MapToExternalEventDto(eventItem));
+                        }
+                    }
+
+                    request.PageToken = eventsFeed.NextPageToken;
+                } while (!string.IsNullOrEmpty(eventsFeed.NextPageToken));
+
+                if (!string.IsNullOrEmpty(eventsFeed.NextSyncToken))
+                {
+                    integration.SyncToken = eventsFeed.NextSyncToken;
+                }
+
+                _logger.LogInformation("Sincronizados {Count} eventos do Google Calendar", events.Count);
+
+                return events;
+            }
+            catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.Gone)
+            {
+                _logger.LogWarning("SyncToken expirado para integração {Id}. Realizando sync completo.", integration.Id);
+                integration.SyncToken = null;
+                return await GetChangedEventsAsync(integration);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar eventos alterados do Google Calendar");
+                throw;
+            }
+        }
+
+        private async Task<CalendarService> GetCalendarServiceAsync(CalendarIntegration integration)
+        {
+            var accessToken = await GetValidAccessTokenAsync(integration);
+            var refreshToken = _cryptoService.Decrypt(integration.EncryptedRefreshToken);
+
+            var tokenResponse = new TokenResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                IssuedUtc = integration.TokenIssuedAtUtc,
+                ExpiresInSeconds = (long)(integration.TokenExpiry - DateTime.UtcNow).Value.TotalSeconds
+            };
+
+            var flow = new GoogleAuthorizationCodeFlow(new GoogleAuthorizationCodeFlow.Initializer
+            {
+                ClientSecrets = new ClientSecrets
+                {
+                    ClientId = _clientId,
+                    ClientSecret = _clientSecret
+                },
+                Scopes = Scopes,
+                DataStore = new NullDataStore()
+            });
+
+            var credential = new UserCredential(flow, "user", tokenResponse);
+
+            return new CalendarService(new BaseClientService.Initializer
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = "OnaCommit"
+            });
+        }
+
+        private async Task<string> GetTenantTimeZoneAsync(Guid tenantId)
+        {
+            var tenant = await _tenantService.GetByIdAsync(tenantId);
+            return tenant?.TimeZone ?? "America/Sao_Paulo";
+        }
+
+        private ExternalEventDto MapToExternalEventDto(Event googleEvent)
+        {
+            return new ExternalEventDto
+            {
+                Id = googleEvent.Id,
+                Summary = googleEvent.Summary ?? "",
+                Description = googleEvent.Description ?? "",
+                Start = googleEvent.Start?.DateTimeDateTimeOffset ?? DateTimeOffset.MinValue,
+                End = googleEvent.End?.DateTimeDateTimeOffset ?? DateTimeOffset.MinValue,
+                Status = googleEvent.Status,
+                Updated = googleEvent.UpdatedDateTimeOffset ?? DateTime.UtcNow
+            };
+        }
+
+        private class NullDataStore : IDataStore
+        {
+            public Task StoreAsync<T>(string key, T value) => Task.CompletedTask;
+            public Task DeleteAsync<T>(string key) => Task.CompletedTask;
+            public Task<T> GetAsync<T>(string key) => Task.FromResult(default(T));
+            public Task ClearAsync() => Task.CompletedTask;
+        }
+
+        private class OfflineGoogleAuthorizationCodeFlow : GoogleAuthorizationCodeFlow
+        {
+            public OfflineGoogleAuthorizationCodeFlow(Initializer initializer) : base(initializer) { }
+
+            public override AuthorizationCodeRequestUrl CreateAuthorizationCodeRequest(string redirectUri)
+            {
+                return new GoogleAuthorizationCodeRequestUrl(new Uri(AuthorizationServerUrl))
+                {
+                    ClientId = ClientSecrets.ClientId,
+                    Scope = string.Join(" ", Scopes),
+                    RedirectUri = redirectUri,
+                    AccessType = "offline",
+                    Prompt = "consent"
+                };
+            }
         }
     }
 }

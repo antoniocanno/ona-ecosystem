@@ -9,6 +9,7 @@ namespace Ona.Commit.Domain.Entities
         public string EncryptedRefreshToken { get; set; } = string.Empty;
         public string? AccessToken { get; set; }
         public DateTime? TokenExpiry { get; set; }
+        public DateTime TokenIssuedAtUtc { get; set; } = DateTime.UtcNow;
         public string? ExternalEmailAddress { get; set; }
         public string? ExternalCalendarId { get; set; }
         public string? Email { get; set; }
@@ -17,6 +18,7 @@ namespace Ona.Commit.Domain.Entities
         // Webhook / Sync fields
         public string? ExternalResourceId { get; set; }
         public string? ExternalChannelId { get; set; }
+        public string? SyncToken { get; set; }
         public string? NextSyncToken { get; set; }
 
         public CalendarIntegration()

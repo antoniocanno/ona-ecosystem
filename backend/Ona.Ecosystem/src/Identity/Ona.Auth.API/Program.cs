@@ -18,7 +18,7 @@ namespace Ona.Auth.API
                 settings.CommandTimeout = 300;
             });
 
-            builder.AddServiceDefaults();
+            builder.AddApiServiceDefaults();
             builder.AddRedisDistributedCache();
 
             // Add services to the container.

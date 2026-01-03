@@ -13,6 +13,7 @@ namespace Ona.Commit.Application.DTOs
         public Guid CustomerId { get; set; }
         public CalendarProvider Provider { get; set; }
         public string Code { get; set; } = string.Empty;
+        public string State { get; set; } = string.Empty;
     }
 
     public class CalendarIntegrationResponse

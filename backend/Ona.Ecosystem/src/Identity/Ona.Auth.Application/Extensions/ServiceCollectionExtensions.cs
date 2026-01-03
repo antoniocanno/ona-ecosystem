@@ -1,6 +1,7 @@
 using Mapster;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Ona.Application.Shared.Interfaces.Services;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Services;
 using Ona.Auth.Application.Settings;

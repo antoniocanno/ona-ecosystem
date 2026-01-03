@@ -1,12 +1,12 @@
 using Mapster;
 using Microsoft.AspNetCore.Identity;
-using Ona.Auth.Application.DTOs.Request;
-using Ona.Auth.Application.DTOs.Responses;
+using Ona.Application.Shared.DTOs.Tenants;
+using Ona.Application.Shared.Interfaces.Services;
 using Ona.Auth.Application.Interfaces.Repositories;
-using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Domain.Entities;
 using Ona.Core.Common.Enums;
 using Ona.Core.Common.Exceptions;
+using Ona.Core.Entities;
 using Ona.Core.Interfaces;
 
 namespace Ona.Auth.Application.Services
@@ -91,6 +91,9 @@ namespace Ona.Auth.Application.Services
 
             if (!string.IsNullOrEmpty(request.Domain))
                 tenant.Domain = request.Domain;
+
+            if (!string.IsNullOrEmpty(request.TimeZone))
+                tenant.TimeZone = request.TimeZone;
 
             tenant.Update();
 

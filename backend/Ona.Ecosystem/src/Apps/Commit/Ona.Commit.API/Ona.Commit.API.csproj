@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0" />
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.22" />
+    <PackageReference Include="Hangfire.PostgreSql" Version="1.20.13" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.22">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -26,7 +28,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Orchestration\Ona.ServiceDefaults\Ona.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Ona.Commit.Infrastructure\Ona.Commit.Infrastructure.csproj" />
-    <ProjectReference Include="..\Ona.Commit.Worker.Hangfire\Ona.Commit.Worker.Hangfire.csproj" />
   </ItemGroup>
 
 </Project>

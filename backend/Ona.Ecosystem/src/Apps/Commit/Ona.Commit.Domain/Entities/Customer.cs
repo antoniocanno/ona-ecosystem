@@ -21,15 +21,21 @@ namespace Ona.Commit.Domain.Entities
 
         public Customer(Guid userId, string name, string phoneNumber, string? email, string? internalNotes)
         {
-            if (userId == Guid.Empty)
-                throw new ValidationException("Usuário inválido.");
-
+            SetUserId(userId);
             SetName(name);
             SetPhoneNumber(phoneNumber);
 
             UserId = userId;
             Email = email;
             InternalNotes = internalNotes;
+        }
+
+        public void SetUserId(Guid userId)
+        {
+            if (userId == Guid.Empty)
+                throw new ValidationException("O cliente deve ter um usuário vinculado.");
+
+            UserId = userId;
         }
 
         private void SetPhoneNumber(string phoneNumber)

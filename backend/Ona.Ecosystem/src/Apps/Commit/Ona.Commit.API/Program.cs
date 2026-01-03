@@ -19,7 +19,7 @@ namespace Ona.Commit.API
                 settings.CommandTimeout = 300;
             });
 
-            builder.AddServiceDefaults();
+            builder.AddApiServiceDefaults();
 
             // Add services to the container.
 

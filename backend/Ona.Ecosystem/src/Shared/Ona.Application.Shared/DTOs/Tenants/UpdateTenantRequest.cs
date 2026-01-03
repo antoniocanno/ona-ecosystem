@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Ona.Auth.Application.DTOs.Request
+namespace Ona.Application.Shared.DTOs.Tenants
 {
     public class UpdateTenantRequest
     {
@@ -9,5 +9,8 @@ namespace Ona.Auth.Application.DTOs.Request
 
         [MaxLength(500)]
         public string? Domain { get; set; }
+
+        [MaxLength(100)]
+        public string? TimeZone { get; set; }
     }
 }

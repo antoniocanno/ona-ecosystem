@@ -1,6 +1,7 @@
 ﻿using Google.Apis.Auth;
 using Mapster;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Ona.Auth.Application.DTOs.Request;
 using Ona.Auth.Application.DTOs.Responses;
@@ -67,7 +68,8 @@ namespace Ona.Auth.Application.Services
 
         public async Task<AuthResult?> LoginAsync(LoginRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
+            var normalizedEmail = _userManager.NormalizeEmail(request.Email);
+            var user = await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
 
             await _userDomainService.ValidateUserForLoginAsync(user);
 
@@ -103,11 +105,12 @@ namespace Ona.Auth.Application.Services
 
             var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, settings);
 
-            var user = _userManager.Users.FirstOrDefault(u => u.GoogleId == payload.Subject);
+            var user = await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.GoogleId == payload.Subject);
 
             if (user == null)
             {
-                user = await _userManager.FindByEmailAsync(payload.Email);
+                var normalizedEmail = _userManager.NormalizeEmail(payload.Email);
+                user = await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
 
                 if (user != null)
                 {
@@ -156,7 +159,8 @@ namespace Ona.Auth.Application.Services
 
         public async Task VerifyEmailAsync(VerifyEmailRequest request)
         {
-            var user = await _userManager.FindByEmailAsync(request.Email);
+            var normalizedEmail = _userManager.NormalizeEmail(request.Email);
+            var user = await _userManager.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.NormalizedEmail == normalizedEmail);
             if (user == null) throw new ValidationException("Email inválido.");
 
             var result = await _userManager.ConfirmEmailAsync(user, request.Token);

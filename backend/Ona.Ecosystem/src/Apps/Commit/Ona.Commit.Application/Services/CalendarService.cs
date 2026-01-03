@@ -1,6 +1,7 @@
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces.Repositories;
+using Ona.Core.Common.Exceptions;
 
 namespace Ona.Commit.Application.Services
 {
@@ -32,7 +33,7 @@ namespace Ona.Commit.Application.Services
             {
                 CalendarProvider.Google => await _googleCalendarService.CreateEventAsync(integration, appointment),
                 CalendarProvider.Outlook => await _outlookCalendarService.CreateEventAsync(integration, appointment),
-                _ => throw new ArgumentOutOfRangeException()
+                _ => throw new ValidationException("Opção de calendário inválida.")
             };
 
             var mapping = new ExternalCalendarEventMapping
@@ -110,7 +111,6 @@ namespace Ona.Commit.Application.Services
                     break;
             }
 
-            // Update integration with new ResourceId/ChannelId set by the service
             _integrationRepository.Update(integration);
             await _integrationRepository.SaveChangesAsync();
         }

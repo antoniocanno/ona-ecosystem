@@ -29,7 +29,6 @@ var worker = builder.AddProject<Projects.Ona_Commit_Worker_Hangfire>("ona-commit
 
 builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
                        .WithReference(authApi)
-                       .WithReference(worker)
                        .WithEnvironment("JwtSettings:Secret", jwtSecret)
                        .WithEnvironment("JwtSettings:Issuer", jwtIssuer)
                        .WithEnvironment("JwtSettings:Audience", jwtAudience)

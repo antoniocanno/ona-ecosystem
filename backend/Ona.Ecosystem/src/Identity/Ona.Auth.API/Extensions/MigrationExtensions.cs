@@ -39,7 +39,7 @@ namespace Ona.Auth.API.Extensions
 
                     var pending = (await db.Database.GetPendingMigrationsAsync(ct)).ToList();
 
-                    if (!pending.Any())
+                    if (pending.Count == 0)
                     {
                         logger.LogInformation("No pending migrations.");
                         return;

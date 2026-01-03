@@ -30,8 +30,8 @@ namespace Ona.ServiceDefaults.ApiExtensions
                     // Exceções de Regra de Negócio / Validação
                     DomainValidationException => StatusCodes.Status400BadRequest,
                     ValidationException => StatusCodes.Status400BadRequest,
-                    NotFoundException => StatusCodes.Status404NotFound,
                     ForbiddenException => StatusCodes.Status403Forbidden,
+                    NotFoundException => StatusCodes.Status404NotFound,
 
                     // Exceções de Segurança
                     UnauthorizedAccessException => StatusCodes.Status401Unauthorized,

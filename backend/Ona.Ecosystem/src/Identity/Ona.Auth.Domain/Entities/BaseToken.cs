@@ -1,4 +1,5 @@
-﻿using Ona.Core.Common.Helpers;
+﻿using Ona.Core.Common.Exceptions;
+using Ona.Core.Common.Helpers;
 using Ona.Core.Interfaces;
 
 namespace Ona.Auth.Domain.Entities
@@ -20,6 +21,14 @@ namespace Ona.Auth.Domain.Entities
             Id = GuidGenerator.NewSequentialGuid();
             CreatedAt = DateTime.UtcNow;
             IsRevoked = false;
+        }
+
+        public void SetUserId(Guid userId)
+        {
+            if (userId == Guid.Empty)
+                throw new ValidationException("O token deve ter um usuário vinculado.");
+
+            UserId = userId;
         }
 
         public bool IsExpired => DateTime.UtcNow >= ExpiresAt;

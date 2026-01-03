@@ -25,7 +25,7 @@ namespace Ona.Commit.API.Controllers
         }
 
         [HttpPost("callback")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> Callback([FromBody] CompleteCalendarAuthRequest request)
         {
             var result = await _service.CompleteAuthAsync(request);

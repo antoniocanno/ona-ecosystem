@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0" />
     <PackageReference Include="Hangfire.AspNetCore" Version="1.8.22" />
     <PackageReference Include="Hangfire.PostgreSql" Version="1.20.13" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
@@ -17,9 +18,5 @@
     <ProjectReference Include="..\..\..\Orchestration\Ona.ServiceDefaults\Ona.ServiceDefaults.csproj" />
     <ProjectReference Include="..\Ona.Commit.Application\Ona.Commit.Application.csproj" />
     <ProjectReference Include="..\Ona.Commit.Infrastructure\Ona.Commit.Infrastructure.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Integrations\" />
   </ItemGroup>
 </Project>

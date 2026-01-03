@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Ona.Commit.Domain.Interfaces;
 using System.Security.Cryptography;
@@ -18,45 +19,45 @@ namespace Ona.Commit.Infrastructure.Services
         {
             if (string.IsNullOrEmpty(plainText)) return plainText;
 
-            using var aes = Aes.Create();
-            aes.Key = Encoding.UTF8.GetBytes(_key);
-            aes.GenerateIV();
+            byte[] key = Convert.FromHexString(_key);
 
-            using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-            using var ms = new MemoryStream();
+            byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
 
-            // Prepend IV to the stream
-            ms.Write(aes.IV, 0, aes.IV.Length);
+            Span<byte> nonce = stackalloc byte[12];
+            Span<byte> tag = stackalloc byte[16];
+            RandomNumberGenerator.Fill(nonce);
 
-            using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-            using (var sw = new StreamWriter(cs))
-            {
-                sw.Write(plainText);
-            }
+            byte[] cipherBytes = new byte[plainBytes.Length];
 
-            return Convert.ToBase64String(ms.ToArray());
+            using var aesGcm = new AesGcm(key, tagSizeInBytes: 16);
+            aesGcm.Encrypt(nonce, plainBytes, cipherBytes, tag);
+
+            byte[] result = new byte[nonce.Length + tag.Length + cipherBytes.Length];
+            nonce.CopyTo(result.AsSpan(0, 12));
+            tag.CopyTo(result.AsSpan(12, 16));
+            cipherBytes.CopyTo(result.AsSpan(28));
+
+            return WebEncoders.Base64UrlEncode(result);
         }
 
         public string Decrypt(string cipherText)
         {
             if (string.IsNullOrEmpty(cipherText)) return cipherText;
 
-            var fullCipher = Convert.FromBase64String(cipherText);
+            byte[] fullCipher = WebEncoders.Base64UrlDecode(cipherText);
+            byte[] key = Convert.FromHexString(_key);
 
-            using var aes = Aes.Create();
-            aes.Key = Encoding.UTF8.GetBytes(_key);
+            ReadOnlySpan<byte> cipherSpan = fullCipher.AsSpan();
+            ReadOnlySpan<byte> nonce = cipherSpan.Slice(0, 12);
+            ReadOnlySpan<byte> tag = cipherSpan.Slice(12, 16);
+            ReadOnlySpan<byte> actualCiphertext = cipherSpan.Slice(28);
 
-            // Extract IV
-            var iv = new byte[aes.BlockSize / 8];
-            Array.Copy(fullCipher, 0, iv, 0, iv.Length);
-            aes.IV = iv;
+            byte[] plainBytes = new byte[actualCiphertext.Length];
 
-            using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-            using var ms = new MemoryStream(fullCipher, iv.Length, fullCipher.Length - iv.Length);
-            using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-            using var sr = new StreamReader(cs);
+            using var aesGcm = new AesGcm(key, tagSizeInBytes: 16);
+            aesGcm.Decrypt(nonce, actualCiphertext, tag, plainBytes);
 
-            return sr.ReadToEnd();
+            return Encoding.UTF8.GetString(plainBytes);
         }
     }
 }
