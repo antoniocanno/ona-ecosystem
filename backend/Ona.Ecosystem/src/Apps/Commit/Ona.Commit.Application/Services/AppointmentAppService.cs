@@ -44,6 +44,7 @@ namespace Ona.Commit.Application.Services
 
             var appointment = new Appointment(
                 request.CustomerId,
+                request.ProfessionalId,
                 request.Summary,
                 request.Description,
                 request.StartDate.ToUniversalTime(),

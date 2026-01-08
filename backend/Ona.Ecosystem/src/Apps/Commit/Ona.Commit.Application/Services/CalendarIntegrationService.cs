@@ -49,7 +49,7 @@ namespace Ona.Commit.Application.Services
                 _ => throw new ValidationException("Invalid provider")
             };
 
-            var integration = await _repository.GetByCustomerAndProviderAsync(request.CustomerId, request.Provider);
+            var integration = await _repository.GetByProfessionalAndProviderAsync(request.ProfessionalId, request.Provider);
 
             if (integration != null)
             {
@@ -66,14 +66,14 @@ namespace Ona.Commit.Application.Services
             else
             {
                 integration = authData;
-                integration.CustomerId = request.CustomerId;
+                integration.ProfessionalId = request.ProfessionalId;
                 integration.IsActive = true;
 
                 await _repository.CreateAsync(integration);
             }
 
             await _repository.SaveChangesAsync();
-            await _calendarService.SubscribeToNotificationsAsync(request.CustomerId);
+            await _calendarService.SubscribeToNotificationsAsync(request.ProfessionalId);
 
             return new CalendarIntegrationResponse
             {

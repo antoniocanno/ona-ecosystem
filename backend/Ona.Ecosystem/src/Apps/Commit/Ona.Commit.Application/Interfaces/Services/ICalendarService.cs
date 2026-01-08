@@ -7,6 +7,6 @@ namespace Ona.Commit.Application.Interfaces.Services
         Task CreateAppointmentEventAsync(Appointment appointment);
         Task UpdateAppointmentEventAsync(Appointment appointment);
         Task DeleteAppointmentEventAsync(Appointment appointment);
-        Task SubscribeToNotificationsAsync(Guid userId);
+        Task SubscribeToNotificationsAsync(Guid professionalId);
     }
 }

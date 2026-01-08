@@ -4,13 +4,13 @@ namespace Ona.Commit.Application.DTOs
 {
     public class InitiateCalendarAuthRequest
     {
-        public Guid CustomerId { get; set; }
+        public Guid ProfessionalId { get; set; }
         public CalendarProvider Provider { get; set; }
     }
 
     public class CompleteCalendarAuthRequest
     {
-        public Guid CustomerId { get; set; }
+        public Guid ProfessionalId { get; set; }
         public CalendarProvider Provider { get; set; }
         public string Code { get; set; } = string.Empty;
         public string State { get; set; } = string.Empty;

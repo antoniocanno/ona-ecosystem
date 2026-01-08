@@ -12,9 +12,9 @@ namespace Ona.Commit.Infrastructure.Repositories
         {
         }
 
-        public async Task<CalendarIntegration?> GetByCustomerAndProviderAsync(Guid customerId, CalendarProvider provider)
+        public async Task<CalendarIntegration?> GetByProfessionalAndProviderAsync(Guid professionalId, CalendarProvider provider)
         {
-            return await _dbSet.FirstOrDefaultAsync(x => x.CustomerId == customerId && x.Provider == provider && x.IsActive);
+            return await _dbSet.FirstOrDefaultAsync(x => x.ProfessionalId == professionalId && x.Provider == provider && x.IsActive);
         }
 
         public async Task<CalendarIntegration?> GetByExternalResourceIdAsync(string resourceId)

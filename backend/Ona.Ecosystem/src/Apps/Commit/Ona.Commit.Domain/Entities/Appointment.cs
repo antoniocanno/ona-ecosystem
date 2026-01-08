@@ -11,6 +11,9 @@ namespace Ona.Commit.Domain.Entities
         public Guid CustomerId { get; private set; }
         public Customer? Customer { get; private set; } = null!;
 
+        public Guid ProfessionalId { get; private set; }
+        public Professional? Professional { get; private set; } = null!;
+
         public string? Summary { get; private set; }
         public string? Description { get; private set; }
 
@@ -26,9 +29,10 @@ namespace Ona.Commit.Domain.Entities
 
         protected Appointment() { }
 
-        public Appointment(Guid customerId, string summary, string description, DateTimeOffset startDate, DateTimeOffset endDate)
+        public Appointment(Guid customerId, Guid professionalId, string summary, string description, DateTimeOffset startDate, DateTimeOffset endDate)
         {
             SetCustomerId(customerId);
+            SetProfessionalId(professionalId);
             SetSummary(summary);
             SetDescription(description);
             SetStartAndEndDate(startDate, endDate);
@@ -48,6 +52,14 @@ namespace Ona.Commit.Domain.Entities
                 throw new ValidationException("O agendamento deve ter um cliente vinculado.");
 
             CustomerId = customerId;
+        }
+
+        public void SetProfessionalId(Guid professionalId)
+        {
+            if (professionalId == Guid.Empty)
+                throw new ValidationException("O agendamento deve ter um profissional vinculado.");
+
+            ProfessionalId = professionalId;
         }
 
         public void SetSummary(string summary)

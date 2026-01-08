@@ -5,6 +5,7 @@ namespace Ona.Auth.Domain.Entities
 {
     public class ApplicationUser : IdentityUser<Guid>, ITenantEntity
     {
+        public override Guid Id { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string? GoogleId { get; set; }
         public DateTime? EmailConfirmedAt { get; set; }

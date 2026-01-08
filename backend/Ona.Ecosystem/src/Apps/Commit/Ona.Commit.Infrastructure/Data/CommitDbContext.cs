@@ -11,6 +11,7 @@ namespace Ona.Commit.Infrastructure.Data
         private readonly ICurrentUser? _currentUser;
 
         public DbSet<Customer> Customers { get; set; } = null!;
+        public DbSet<Professional> Professionals { get; set; } = null!;
         public DbSet<Appointment> Appointments { get; set; } = null!;
         public DbSet<CalendarIntegration> CalendarIntegrations { get; set; } = null!;
         public DbSet<ExternalCalendarEventMapping> ExternalCalendarEventMappings { get; set; } = null!;
@@ -30,6 +31,7 @@ namespace Ona.Commit.Infrastructure.Data
 
             ConfigureTablesNames(modelBuilder);
             ConfigureCustomerEntity(modelBuilder);
+            ConfigureProfessionalEntity(modelBuilder);
             ConfigureAppointmentEntity(modelBuilder);
             ConfigureNotificationLogEntity(modelBuilder);
             ConfigureCalendarIntegrationEntity(modelBuilder);
@@ -43,6 +45,7 @@ namespace Ona.Commit.Infrastructure.Data
         private static void ConfigureTablesNames(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Customer>().ToTable("Customers");
+            modelBuilder.Entity<Professional>().ToTable("Professionals");
             modelBuilder.Entity<Appointment>().ToTable("Appointments");
             modelBuilder.Entity<NotificationLog>().ToTable("NotificationLogs");
             modelBuilder.Entity<MessageTemplate>().ToTable("MessageTemplates");
@@ -60,12 +63,25 @@ namespace Ona.Commit.Infrastructure.Data
             });
         }
 
+        private static void ConfigureProfessionalEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Professional>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+                entity.HasIndex(p => new { p.TenantId, p.Email }).IsUnique();
+            });
+        }
+
         private static void ConfigureAppointmentEntity(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Appointment>(entity =>
             {
                 entity.HasKey(a => a.Id);
                 entity.HasIndex(a => new { a.TenantId, a.StartDate });
+                entity.HasOne(a => a.Professional)
+                    .WithMany()
+                    .HasForeignKey(a => a.ProfessionalId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
 
@@ -83,7 +99,11 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<CalendarIntegration>(entity =>
             {
                 entity.HasKey(c => c.Id);
-                entity.HasIndex(c => new { c.TenantId, c.CustomerId });
+                entity.HasIndex(c => new { c.TenantId, c.ProfessionalId });
+                entity.HasOne(c => c.Professional)
+                    .WithMany()
+                    .HasForeignKey(c => c.ProfessionalId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
 

@@ -4,7 +4,8 @@ namespace Ona.Commit.Domain.Entities
 {
     public class CalendarIntegration : TenantEntity
     {
-        public Guid CustomerId { get; set; }
+        public Guid ProfessionalId { get; set; }
+        public Professional? Professional { get; set; }
         public CalendarProvider Provider { get; set; }
         public string EncryptedRefreshToken { get; set; } = string.Empty;
         public string? AccessToken { get; set; }

@@ -26,7 +26,7 @@ namespace Ona.Commit.Application.Services
 
         public async Task CreateAppointmentEventAsync(Appointment appointment)
         {
-            var integration = await GetActiveIntegrationAsync(appointment.UserId);
+            var integration = await GetActiveIntegrationAsync(appointment.ProfessionalId);
             if (integration == null) return;
 
             string externalId = integration.Provider switch
@@ -53,7 +53,7 @@ namespace Ona.Commit.Application.Services
             var mapping = await _mappingRepository.GetByAppointmentIdAsync(appointment.Id);
             if (mapping == null) return;
 
-            var integration = await GetActiveIntegrationAsync(appointment.UserId);
+            var integration = await GetActiveIntegrationAsync(appointment.ProfessionalId);
             if (integration == null) return;
 
             switch (integration.Provider)
@@ -76,7 +76,7 @@ namespace Ona.Commit.Application.Services
             var mapping = await _mappingRepository.GetByAppointmentIdAsync(appointment.Id);
             if (mapping == null) return;
 
-            var integration = await GetActiveIntegrationAsync(appointment.UserId);
+            var integration = await GetActiveIntegrationAsync(appointment.ProfessionalId);
             if (integration == null) return;
 
             switch (integration.Provider)
@@ -93,12 +93,11 @@ namespace Ona.Commit.Application.Services
             await _mappingRepository.SaveChangesAsync();
         }
 
-        public async Task SubscribeToNotificationsAsync(Guid userId)
+        public async Task SubscribeToNotificationsAsync(Guid professionalId)
         {
-            var integration = await GetActiveIntegrationAsync(userId);
+            var integration = await GetActiveIntegrationAsync(professionalId);
             if (integration == null) return;
 
-            // TODO: Retrieve specific webhook URL from configuration
             var webhookBase = "https://api.ona.com/api/v1/webhooks/calendar";
 
             switch (integration.Provider)
@@ -115,12 +114,12 @@ namespace Ona.Commit.Application.Services
             await _integrationRepository.SaveChangesAsync();
         }
 
-        private async Task<CalendarIntegration?> GetActiveIntegrationAsync(Guid userId)
+        private async Task<CalendarIntegration?> GetActiveIntegrationAsync(Guid professionalId)
         {
-            var integration = await _integrationRepository.GetByCustomerAndProviderAsync(userId, CalendarProvider.Google);
+            var integration = await _integrationRepository.GetByProfessionalAndProviderAsync(professionalId, CalendarProvider.Google);
             if (integration == null || !integration.IsActive)
             {
-                integration = await _integrationRepository.GetByCustomerAndProviderAsync(userId, CalendarProvider.Outlook);
+                integration = await _integrationRepository.GetByProfessionalAndProviderAsync(professionalId, CalendarProvider.Outlook);
             }
 
             return (integration != null && integration.IsActive) ? integration : null;
