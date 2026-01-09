@@ -114,6 +114,22 @@ namespace Ona.Commit.Application.Services
             await _integrationRepository.SaveChangesAsync();
         }
 
+        public async Task UnsubscribeFromNotificationsAsync(Guid professionalId, CalendarProvider provider)
+        {
+            var integration = await _integrationRepository.GetByProfessionalAndProviderAsync(professionalId, provider);
+            if (integration == null) return;
+
+            switch (integration.Provider)
+            {
+                case CalendarProvider.Google:
+                    await _googleCalendarService.UnsubscribeFromNotificationsAsync(integration);
+                    break;
+                case CalendarProvider.Outlook:
+                    await _outlookCalendarService.UnsubscribeFromNotificationsAsync(integration);
+                    break;
+            }
+        }
+
         private async Task<CalendarIntegration?> GetActiveIntegrationAsync(Guid professionalId)
         {
             var integration = await _integrationRepository.GetByProfessionalAndProviderAsync(professionalId, CalendarProvider.Google);

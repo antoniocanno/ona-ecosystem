@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Ona.Commit.Application.DTOs;
+using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
+using Ona.Commit.Domain.Entities;
 
 namespace Ona.Commit.API.Controllers
 {
@@ -30,6 +31,14 @@ namespace Ona.Commit.API.Controllers
         {
             var result = await _service.CompleteAuthAsync(request);
             return Ok(result);
+        }
+
+        [HttpDelete("{professionalId}/{provider}")]
+        [Authorize]
+        public async Task<IActionResult> Remove(Guid professionalId, CalendarProvider provider)
+        {
+            await _service.RemoveIntegrationAsync(professionalId, provider);
+            return NoContent();
         }
     }
 }

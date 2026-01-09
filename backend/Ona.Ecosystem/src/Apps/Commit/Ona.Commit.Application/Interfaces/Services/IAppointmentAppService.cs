@@ -1,5 +1,5 @@
-﻿using Ona.Commit.Application.DTOs;
-using Ona.Commit.Application.DTOs.Request;
+﻿using Ona.Commit.Application.DTOs.Requests;
+using Ona.Commit.Application.DTOs.Responses;
 
 namespace Ona.Commit.Application.Interfaces.Services
 {

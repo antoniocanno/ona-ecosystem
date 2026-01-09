@@ -1,4 +1,4 @@
-﻿namespace Ona.Commit.Application.DTOs.Request
+﻿namespace Ona.Commit.Application.DTOs.Requests
 {
     public record CreateAppointmentRequest
     {

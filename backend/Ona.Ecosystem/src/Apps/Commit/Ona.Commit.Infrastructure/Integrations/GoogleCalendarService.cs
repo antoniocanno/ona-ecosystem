@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Google.Apis.Auth.OAuth2;
+﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Auth.OAuth2.Flows;
 using Google.Apis.Auth.OAuth2.Requests;
 using Google.Apis.Auth.OAuth2.Responses;
@@ -10,12 +9,13 @@ using Google.Apis.Util.Store;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Ona.Application.Shared.Interfaces.Services;
-using Ona.Commit.Application.DTOs;
+using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces;
 using Ona.Core.Common.Exceptions;
 using Ona.Core.Interfaces;
+using System.Text.Json;
 
 namespace Ona.Commit.Infrastructure.Integrations
 {
@@ -256,6 +256,21 @@ namespace Ona.Commit.Infrastructure.Integrations
             return await RefreshAccessTokenAsync(integration);
         }
 
+        public async Task<bool> RefreshTokenIfNeededAsync(CalendarIntegration integration)
+        {
+            if (integration.TokenExpiry.HasValue &&
+                integration.TokenExpiry.Value <= DateTime.UtcNow.AddMinutes(15))
+            {
+                _logger.LogInformation("Token do Google Calendar para {ProfessionalId} expira em breve ({Expiry}). Renovando...",
+                    integration.ProfessionalId, integration.TokenExpiry);
+
+                await RefreshAccessTokenAsync(integration);
+                return true;
+            }
+
+            return false;
+        }
+
         private async Task<string> RefreshAccessTokenAsync(CalendarIntegration integration)
         {
             try
@@ -319,6 +334,36 @@ namespace Ona.Commit.Infrastructure.Integrations
             {
                 _logger.LogError(ex, "Erro ao registrar webhook no Google Calendar");
                 throw;
+            }
+        }
+
+        public async Task UnsubscribeFromNotificationsAsync(CalendarIntegration integration)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(integration.ExternalChannelId) || string.IsNullOrEmpty(integration.ExternalResourceId))
+                {
+                    return;
+                }
+
+                var service = await GetCalendarServiceAsync(integration);
+                var channel = new Channel
+                {
+                    Id = integration.ExternalChannelId,
+                    ResourceId = integration.ExternalResourceId
+                };
+
+                await service.Channels.Stop(channel).ExecuteAsync();
+
+                _logger.LogInformation(
+                    "Webhook cancelado no Google Calendar. ChannelId: {ChannelId}, ResourceId: {ResourceId}",
+                    integration.ExternalChannelId,
+                    integration.ExternalResourceId
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Erro ao cancelar webhook no Google Calendar (o canal já pode ter expirado)");
             }
         }
 

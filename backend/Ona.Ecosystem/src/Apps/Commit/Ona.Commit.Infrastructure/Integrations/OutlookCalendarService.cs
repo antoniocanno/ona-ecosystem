@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -7,12 +6,13 @@ using Microsoft.Graph.Models;
 using Microsoft.Identity.Client;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Ona.Application.Shared.Interfaces.Services;
-using Ona.Commit.Application.DTOs;
+using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces;
 using Ona.Core.Common.Exceptions;
 using Ona.Core.Interfaces;
+using System.Text.Json;
 
 namespace Ona.Commit.Infrastructure.Integrations
 {
@@ -284,6 +284,21 @@ namespace Ona.Commit.Infrastructure.Integrations
             return await RefreshAccessTokenAsync(integration);
         }
 
+        public async Task<bool> RefreshTokenIfNeededAsync(CalendarIntegration integration)
+        {
+            if (integration.TokenExpiry.HasValue &&
+                integration.TokenExpiry.Value <= DateTime.UtcNow.AddMinutes(15))
+            {
+                _logger.LogInformation("Token do Outlook Calendar para {ProfessionalId} expira em breve ({Expiry}). Renovando...",
+                    integration.ProfessionalId, integration.TokenExpiry);
+
+                await RefreshAccessTokenAsync(integration);
+                return true;
+            }
+
+            return false;
+        }
+
         private async Task<string> RefreshAccessTokenAsync(CalendarIntegration integration)
         {
             try
@@ -377,6 +392,29 @@ namespace Ona.Commit.Infrastructure.Integrations
             {
                 _logger.LogError(ex, "Erro ao registrar webhook no Outlook Calendar");
                 throw;
+            }
+        }
+
+        public async Task UnsubscribeFromNotificationsAsync(CalendarIntegration integration)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(integration.ExternalChannelId))
+                {
+                    return;
+                }
+
+                var graphClient = await GetGraphClientAsync(integration);
+                await graphClient.Subscriptions[integration.ExternalChannelId].DeleteAsync();
+
+                _logger.LogInformation(
+                    "Webhook cancelado no Outlook Calendar. SubscriptionId: {SubscriptionId}",
+                    integration.ExternalChannelId
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Erro ao cancelar webhook no Outlook Calendar (a inscrição já pode ter expirado)");
             }
         }
 

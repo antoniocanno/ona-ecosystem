@@ -1,6 +1,6 @@
-using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Ona.Core.Interfaces;
+using System.Linq.Expressions;
 
 namespace Ona.Infrastructure.Shared.Data
 {

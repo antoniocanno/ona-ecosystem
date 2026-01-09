@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Ona.Auth.Application.DTOs.Request;
+using Ona.Auth.Application.DTOs.Requests;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Core.Common.Enums;
 using Ona.ServiceDefaults.Attributes;

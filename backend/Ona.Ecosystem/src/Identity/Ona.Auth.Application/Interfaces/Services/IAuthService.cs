@@ -1,4 +1,4 @@
-using Ona.Auth.Application.DTOs.Request;
+using Ona.Auth.Application.DTOs.Requests;
 using Ona.Auth.Application.DTOs.Responses;
 
 namespace Ona.Auth.Application.Interfaces.Services

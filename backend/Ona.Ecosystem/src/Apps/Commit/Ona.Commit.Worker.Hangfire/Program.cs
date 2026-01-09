@@ -2,6 +2,7 @@ using Hangfire;
 using Hangfire.PostgreSql;
 using Ona.Commit.Infrastructure.Data;
 using Ona.Commit.Infrastructure.Extensions;
+using Ona.Commit.Worker.Hangfire.Extensions;
 using Ona.ServiceDefaults;
 
 namespace Ona.Commit.Worker.Hangfire;
@@ -28,6 +29,9 @@ public class Program
         builder.Services.AddInfrastructure(builder.Configuration);
 
         var host = builder.Build();
+
+        host.RegisterHangfireJobs();
+
         host.Run();
     }
 }

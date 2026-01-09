@@ -1,4 +1,4 @@
-namespace Ona.Commit.Application.DTOs
+namespace Ona.Commit.Application.DTOs.Responses
 {
     public class ExternalEventDto
     {

@@ -1,5 +1,5 @@
-using Ona.Commit.Application.DTOs;
-using Ona.Commit.Application.DTOs.Request;
+using Ona.Commit.Application.DTOs.Requests;
+using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Repositories;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;

@@ -7,5 +7,6 @@ namespace Ona.Commit.Domain.Interfaces.Repositories
     {
         Task<CalendarIntegration?> GetByProfessionalAndProviderAsync(Guid professionalId, CalendarProvider provider);
         Task<CalendarIntegration?> GetByExternalResourceIdAsync(string resourceId);
+        Task<IEnumerable<CalendarIntegration>> GetAllActiveAsync();
     }
 }

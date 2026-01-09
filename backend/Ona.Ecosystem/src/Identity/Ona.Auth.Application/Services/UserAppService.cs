@@ -1,6 +1,6 @@
 ﻿using Mapster;
 using Microsoft.AspNetCore.Identity;
-using Ona.Auth.Application.DTOs.Request;
+using Ona.Auth.Application.DTOs.Requests;
 using Ona.Auth.Application.DTOs.Responses;
 using Ona.Auth.Application.Interfaces.Repositories;
 using Ona.Auth.Application.Interfaces.Services;
@@ -61,7 +61,7 @@ namespace Ona.Auth.Application.Services
         public async Task<UserDto> GetByIdAsync(Guid id)
         {
             var user = await _repository.GetByIdAsync(id);
-            return user!.Adapt<UserDto>();
+            return user!;
         }
 
         public async Task<UserDto> UpdateAsync(Guid id, UserUpdateRequest request)
@@ -79,7 +79,7 @@ namespace Ona.Auth.Application.Services
             user = _repository.Update(user!);
             await _repository.SaveChangesAsync();
 
-            return user.Adapt<UserDto>();
+            return user;
         }
 
         public async Task<UserDto> GetMeAsync()
@@ -124,7 +124,7 @@ namespace Ona.Auth.Application.Services
             await _userTenantRoleRepository.CreateAsync(new UserTenantRole(user.Id, role.Id, _currentTenant.Id.Value));
             await _userTenantRoleRepository.SaveChangesAsync();
 
-            return user.Adapt<UserDto>();
+            return user;
         }
 
         public async Task InviteUserAsync(InviteUserRequest request)

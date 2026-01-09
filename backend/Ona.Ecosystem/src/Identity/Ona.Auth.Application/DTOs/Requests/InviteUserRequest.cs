@@ -1,4 +1,4 @@
-namespace Ona.Auth.Application.DTOs.Request
+namespace Ona.Auth.Application.DTOs.Requests
 {
     public class InviteUserRequest
     {

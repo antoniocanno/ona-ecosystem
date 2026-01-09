@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Ona.Auth.Application.DTOs.Request
+namespace Ona.Auth.Application.DTOs.Requests
 {
     public record UserUpdateRequest
     {

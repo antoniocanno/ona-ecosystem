@@ -21,5 +21,10 @@ namespace Ona.Commit.Infrastructure.Repositories
         {
             return await _dbSet.FirstOrDefaultAsync(x => x.ExternalResourceId == resourceId && x.IsActive);
         }
+
+        public async Task<IEnumerable<CalendarIntegration>> GetAllActiveAsync()
+        {
+            return await _dbSet.Where(x => x.IsActive).ToListAsync();
+        }
     }
 }

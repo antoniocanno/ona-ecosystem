@@ -1,7 +1,7 @@
 ﻿using Mapster;
 using Ona.Commit.Domain.Entities;
 
-namespace Ona.Commit.Application.DTOs
+namespace Ona.Commit.Application.DTOs.Responses
 {
     public record CustomerDto
     {

@@ -3,7 +3,7 @@ using Mapster;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Ona.Auth.Application.DTOs.Request;
+using Ona.Auth.Application.DTOs.Requests;
 using Ona.Auth.Application.DTOs.Responses;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Settings;

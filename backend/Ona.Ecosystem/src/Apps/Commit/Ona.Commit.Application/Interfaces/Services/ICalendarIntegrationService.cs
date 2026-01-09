@@ -1,4 +1,5 @@
-using Ona.Commit.Application.DTOs;
+using Ona.Commit.Application.DTOs.Responses;
+using Ona.Commit.Domain.Entities;
 
 namespace Ona.Commit.Application.Interfaces.Services
 {
@@ -6,5 +7,6 @@ namespace Ona.Commit.Application.Interfaces.Services
     {
         string GetAuthUrl(InitiateCalendarAuthRequest request);
         Task<CalendarIntegrationResponse> CompleteAuthAsync(CompleteCalendarAuthRequest request);
+        Task RemoveIntegrationAsync(Guid professionalId, CalendarProvider provider);
     }
 }

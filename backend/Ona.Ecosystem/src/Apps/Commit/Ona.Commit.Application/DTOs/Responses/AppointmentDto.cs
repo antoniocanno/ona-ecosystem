@@ -2,7 +2,7 @@
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Enums;
 
-namespace Ona.Commit.Application.DTOs
+namespace Ona.Commit.Application.DTOs.Responses
 {
     public record AppointmentDto
     {
