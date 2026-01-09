@@ -25,6 +25,9 @@ namespace Ona.Commit.Domain.Entities
 
         public string? ExternalCalendarEventId { get; private set; }
 
+        public int? ReminderLeadTime { get; private set; }
+        public ReminderStatus ReminderStatus { get; private set; } = ReminderStatus.Pending;
+
         public ICollection<NotificationLog> Notifications { get; private set; } = [];
 
         protected Appointment() { }
@@ -140,6 +143,33 @@ namespace Ona.Commit.Domain.Entities
                 throw new ValidationException("O score de risco deve estar entre 0 e 100.");
 
             RiskScore = riskScore;
+        }
+
+        public void SetReminderLeadTime(int? reminderLeadTime)
+        {
+            if (reminderLeadTime.HasValue && reminderLeadTime.Value < 0)
+                throw new ValidationException("O tempo de antecedência do lembrete deve ser maior ou igual a zero.");
+
+            ReminderLeadTime = reminderLeadTime;
+            Update();
+        }
+
+        public void MarkReminderAsSent()
+        {
+            ReminderStatus = ReminderStatus.Sent;
+            Update();
+        }
+
+        public void MarkReminderAsFailed()
+        {
+            ReminderStatus = ReminderStatus.Failed;
+            Update();
+        }
+
+        public void ResetReminderStatus()
+        {
+            ReminderStatus = ReminderStatus.Pending;
+            Update();
         }
     }
 }

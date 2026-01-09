@@ -15,6 +15,11 @@ public static class HangfireJobRegistrationExtensions
             worker => worker.RefreshExpiringTokensAsync(),
             Cron.MinuteInterval(5));
 
+        recurringJobManager.AddOrUpdate<IAppointmentReminderWorker>(
+            "appointment-reminder-notification",
+            worker => worker.SendPendingRemindersAsync(),
+            Cron.MinuteInterval(5));
+
         return host;
     }
 }
