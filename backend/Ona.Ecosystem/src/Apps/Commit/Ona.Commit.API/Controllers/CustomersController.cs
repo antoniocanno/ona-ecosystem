@@ -32,8 +32,6 @@ namespace Ona.Commit.API.Controllers
         public async Task<IActionResult> GetById(Guid id)
         {
             var customer = await _customerAppService.GetByIdAsync(id);
-            if (customer == null)
-                return NotFound();
             return Ok(customer);
         }
 

@@ -11,5 +11,9 @@ namespace Ona.Application.Shared.DTOs.Tenants
         public TenantStatus Status { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
+
+        public string? WhatsAppInstanceId { get; set; }
+        public string? WhatsAppApiKey { get; set; }
+        public bool IsWhatsAppConnected { get; set; }
     }
 }

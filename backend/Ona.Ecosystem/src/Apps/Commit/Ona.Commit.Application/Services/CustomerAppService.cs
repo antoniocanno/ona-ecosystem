@@ -30,7 +30,8 @@ namespace Ona.Commit.Application.Services
         public async Task<CustomerDto?> GetByIdAsync(Guid id)
         {
             var customer = await _repository.GetByIdAsync(id);
-            if (customer == null) return null;
+            if (customer == null)
+                throw new NotFoundException("Cliente não encontrado.");
 
             return customer;
         }

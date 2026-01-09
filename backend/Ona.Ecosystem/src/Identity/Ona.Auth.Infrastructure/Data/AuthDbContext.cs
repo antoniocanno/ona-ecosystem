@@ -57,6 +57,9 @@ namespace Ona.Auth.Infrastructure.Data
                 entity.Property(t => t.Name).IsRequired();
                 entity.Property(t => t.Domain).IsRequired();
                 entity.Property(t => t.TimeZone).IsRequired().HasDefaultValue("America/Sao_Paulo");
+                entity.Property(t => t.WhatsAppInstanceId).HasMaxLength(100);
+                entity.Property(t => t.WhatsAppApiKey).HasMaxLength(100);
+                entity.Property(t => t.IsWhatsAppConnected).HasDefaultValue(false);
             });
         }
 

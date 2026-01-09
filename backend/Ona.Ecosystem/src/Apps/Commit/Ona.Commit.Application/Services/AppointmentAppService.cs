@@ -30,10 +30,18 @@ namespace Ona.Commit.Application.Services
             return appointments.Select(a => (AppointmentDto)a);
         }
 
+        public async Task<IEnumerable<AppointmentDto>> ListAsync(DateTimeOffset startDate, DateTimeOffset endDate, Guid professionalId)
+        {
+            return await _repository.ListAsync(startDate, endDate, professionalId);
+        }
+
         public async Task<AppointmentDto?> GetByIdAsync(Guid id)
         {
             var entity = await _repository.GetByIdAsync(id, a => a.Customer);
-            if (entity == null) return null;
+
+            if (entity == null)
+                throw new NotFoundException("Agendamento não encontrado.");
+
             return entity;
         }
 
@@ -62,7 +70,7 @@ namespace Ona.Commit.Application.Services
         {
             var appointment = await _repository.GetByIdAsync(id);
             if (appointment == null)
-                throw new ValidationException("Agendamento não encontrado.");
+                throw new NotFoundException("Agendamento não encontrado.");
 
             if (request.StartDate.HasValue && request.EndDate.HasValue)
                 appointment.Reschedule(
@@ -90,7 +98,7 @@ namespace Ona.Commit.Application.Services
         {
             var appointment = await _repository.GetByIdAsync(id);
             if (appointment == null)
-                throw new ValidationException("Agendamento não encontrado.");
+                throw new NotFoundException("Agendamento não encontrado.");
 
             appointment.Delete();
 

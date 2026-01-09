@@ -15,7 +15,6 @@ namespace Ona.Commit.Infrastructure.Data
         public DbSet<Appointment> Appointments { get; set; } = null!;
         public DbSet<CalendarIntegration> CalendarIntegrations { get; set; } = null!;
         public DbSet<ExternalCalendarEventMapping> ExternalCalendarEventMappings { get; set; } = null!;
-        public DbSet<TenantSettings> TenantSettings { get; set; } = null!;
 
         public CommitDbContext() : base() { }
 
@@ -37,7 +36,6 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureCalendarIntegrationEntity(modelBuilder);
             ConfigureExternalCalendarEventMappingEntity(modelBuilder);
             ConfigureMessageTemplateEntity(modelBuilder);
-            ConfigureTenantSettingsEntity(modelBuilder);
 
             modelBuilder.ApplyTenantFilters(_currentTenant);
         }
@@ -49,7 +47,6 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<Appointment>().ToTable("Appointments");
             modelBuilder.Entity<NotificationLog>().ToTable("NotificationLogs");
             modelBuilder.Entity<MessageTemplate>().ToTable("MessageTemplates");
-            modelBuilder.Entity<TenantSettings>().ToTable("TenantSettings");
             modelBuilder.Entity<CalendarIntegration>().ToTable("CalendarIntegrations");
             modelBuilder.Entity<ExternalCalendarEventMapping>().ToTable("ExternalCalendarEventMappings");
         }
@@ -121,14 +118,6 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<MessageTemplate>(entity =>
             {
                 entity.HasKey(m => m.Id);
-            });
-        }
-
-        private static void ConfigureTenantSettingsEntity(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<TenantSettings>(entity =>
-            {
-                entity.HasKey(t => t.Id);
             });
         }
 

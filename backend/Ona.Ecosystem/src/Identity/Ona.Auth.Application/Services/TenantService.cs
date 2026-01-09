@@ -95,6 +95,15 @@ namespace Ona.Auth.Application.Services
             if (!string.IsNullOrEmpty(request.TimeZone))
                 tenant.TimeZone = request.TimeZone;
 
+            if (request.WhatsAppInstanceId != null)
+                tenant.WhatsAppInstanceId = request.WhatsAppInstanceId;
+
+            if (request.WhatsAppApiKey != null)
+                tenant.WhatsAppApiKey = request.WhatsAppApiKey;
+
+            if (request.IsWhatsAppConnected.HasValue)
+                tenant.IsWhatsAppConnected = request.IsWhatsAppConnected.Value;
+
             tenant.Update();
 
             _tenantRepository.Update(tenant);

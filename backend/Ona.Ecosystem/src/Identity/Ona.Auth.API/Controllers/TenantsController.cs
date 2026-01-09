@@ -24,7 +24,7 @@ namespace Ona.Auth.API.Controllers
         public async Task<IActionResult> Create([FromBody] CreateTenantRequest request)
         {
             var tenant = await _tenantService.CreateTenantAsync(request);
-            return Ok(new { tenant.Id, tenant.Name, tenant.Domain });
+            return Ok(tenant);
         }
 
         [HttpGet("{id:guid}")]

@@ -12,5 +12,9 @@ namespace Ona.Application.Shared.DTOs.Tenants
 
         [MaxLength(100)]
         public string? TimeZone { get; set; }
+
+        public string? WhatsAppInstanceId { get; set; }
+        public string? WhatsAppApiKey { get; set; }
+        public bool? IsWhatsAppConnected { get; set; }
     }
 }
