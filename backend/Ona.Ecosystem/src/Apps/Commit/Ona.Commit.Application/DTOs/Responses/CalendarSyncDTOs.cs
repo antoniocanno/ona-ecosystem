@@ -9,5 +9,6 @@ namespace Ona.Commit.Application.DTOs.Responses
         public DateTimeOffset Start { get; set; }
         public DateTimeOffset End { get; set; }
         public DateTimeOffset Updated { get; set; }
+        public bool AlreadyImported { get; set; }
     }
 }

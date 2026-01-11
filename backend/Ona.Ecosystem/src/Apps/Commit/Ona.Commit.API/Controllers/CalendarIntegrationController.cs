@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
+using Ona.Core.Common.Enums;
+using Ona.ServiceDefaults.Attributes;
 
 namespace Ona.Commit.API.Controllers
 {
@@ -18,7 +20,7 @@ namespace Ona.Commit.API.Controllers
         }
 
         [HttpPost("initiate")]
-        [Authorize]
+        [AuthorizeRoles(Role.Operator)]
         public IActionResult Initiate([FromBody] InitiateCalendarAuthRequest request)
         {
             var url = _service.GetAuthUrl(request);
@@ -34,11 +36,19 @@ namespace Ona.Commit.API.Controllers
         }
 
         [HttpDelete("{professionalId}/{provider}")]
-        [Authorize]
+        [AuthorizeRoles(Role.Operator)]
         public async Task<IActionResult> Remove(Guid professionalId, CalendarProvider provider)
         {
             await _service.RemoveIntegrationAsync(professionalId, provider);
             return NoContent();
+        }
+
+        [HttpGet("{professionalId}/{provider}")]
+        [AuthorizeRoles(Role.Operator)]
+        public async Task<IActionResult> ListExternalEventsAsync(Guid professionalId, CalendarProvider provider)
+        {
+            var events = await _service.ListExternalEventsAsync(professionalId, provider);
+            return Ok(events);
         }
     }
 }

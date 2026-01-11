@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Enums;
 using Ona.Commit.Domain.Interfaces.Workers;
 using Ona.Commit.Infrastructure.Data;

@@ -1,3 +1,4 @@
+using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Domain.Entities;
 
 namespace Ona.Commit.Application.Interfaces.Services
@@ -9,5 +10,6 @@ namespace Ona.Commit.Application.Interfaces.Services
         Task DeleteAppointmentEventAsync(Appointment appointment);
         Task SubscribeToNotificationsAsync(Guid professionalId);
         Task UnsubscribeFromNotificationsAsync(Guid professionalId, CalendarProvider provider);
+        Task<IEnumerable<ExternalEventDto>> GetEventsAsync(Guid professionalId, CalendarProvider provider);
     }
 }

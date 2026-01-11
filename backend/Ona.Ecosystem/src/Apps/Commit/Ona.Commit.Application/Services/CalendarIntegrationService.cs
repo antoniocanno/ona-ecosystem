@@ -1,7 +1,6 @@
 using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
-using Ona.Commit.Domain.Interfaces;
 using Ona.Commit.Domain.Interfaces.Repositories;
 using Ona.Core.Common.Exceptions;
 
@@ -12,20 +11,17 @@ namespace Ona.Commit.Application.Services
         private readonly ICalendarIntegrationRepository _repository;
         private readonly IGoogleCalendarService _googleService;
         private readonly IOutlookCalendarService _outlookService;
-        private readonly ICryptographyService _cryptoService;
         private readonly ICalendarService _calendarService;
 
         public CalendarIntegrationService(
             ICalendarIntegrationRepository repository,
             IGoogleCalendarService googleService,
             IOutlookCalendarService outlookService,
-            ICryptographyService cryptoService,
             ICalendarService calendarService)
         {
             _repository = repository;
             _googleService = googleService;
             _outlookService = outlookService;
-            _cryptoService = cryptoService;
             _calendarService = calendarService;
         }
 
@@ -94,6 +90,14 @@ namespace Ona.Commit.Application.Services
 
             _repository.Remove(integration);
             await _repository.SaveChangesAsync();
+        }
+
+        public async Task<IEnumerable<ExternalEventDto>> ListExternalEventsAsync(Guid professionalId, CalendarProvider provider)
+        {
+            var integration = await _repository.GetByProfessionalAndProviderAsync(professionalId, provider);
+            if (integration == null) return [];
+
+            return await _calendarService.GetEventsAsync(professionalId, provider);
         }
     }
 }

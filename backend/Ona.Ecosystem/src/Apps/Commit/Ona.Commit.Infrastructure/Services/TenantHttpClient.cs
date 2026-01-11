@@ -1,7 +1,7 @@
-using System.Net.Http.Json;
 using Ona.Application.Shared.DTOs.Tenants;
 using Ona.Application.Shared.Interfaces.Services;
 using Ona.Core.Entities;
+using System.Net.Http.Json;
 
 namespace Ona.Commit.Infrastructure.Services
 {

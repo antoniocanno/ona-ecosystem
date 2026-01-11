@@ -12,6 +12,7 @@ namespace Ona.Commit.Application.Interfaces.Services
         Task DeleteEventAsync(CalendarIntegration integration, string externalEventId);
         Task<string> GetValidAccessTokenAsync(CalendarIntegration integration);
         Task<bool> RefreshTokenIfNeededAsync(CalendarIntegration integration);
+        Task<IEnumerable<ExternalEventDto>> GetEventsAsync(CalendarIntegration integration);
 
         // Webhook / Sync methods
         Task SubscribeToNotificationsAsync(CalendarIntegration integration, string webhookUrl);

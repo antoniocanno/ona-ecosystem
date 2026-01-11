@@ -10,6 +10,7 @@ using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces;
+using Ona.Commit.Domain.Interfaces.Repositories;
 using Ona.Core.Common.Exceptions;
 using Ona.Core.Interfaces;
 using System.Text.Json;
@@ -29,6 +30,7 @@ namespace Ona.Commit.Infrastructure.Integrations
         private readonly ICryptographyService _cryptoService;
         private readonly ITenantService _tenantService;
         private readonly IDistributedCache _distributedCache;
+        private readonly ICalendarIntegrationRepository _repository;
         private static readonly string[] Scopes = { "Calendars.ReadWrite", "offline_access" };
 
         public OutlookCalendarService(
@@ -38,7 +40,8 @@ namespace Ona.Commit.Infrastructure.Integrations
             ITenantService tenantService,
             ICurrentUser currentUser,
             ICurrentTenant currentTenant,
-            IDistributedCache distributedCache)
+            IDistributedCache distributedCache,
+            ICalendarIntegrationRepository repository)
         {
             _configuration = configuration;
             _cryptoService = cryptoService;
@@ -47,10 +50,11 @@ namespace Ona.Commit.Infrastructure.Integrations
             _currentUser = currentUser;
             _currentTenant = currentTenant;
             _distributedCache = distributedCache;
-            //_clientId = _configuration["Microsoft:ClientId"] ?? throw new InvalidOperationException("Microsoft ClientId não configurado");
-            //_clientSecret = _configuration["Microsoft:ClientSecret"] ?? throw new InvalidOperationException("Microsoft ClientSecret não configurado");
-            //_microsoftTenantId = _configuration["Microsoft:TenantId"] ?? "common";
-            //_redirectUri = _configuration["Microsoft:RedirectUri"] ?? throw new InvalidOperationException("Microsoft RedirectUri não configurado");
+            _repository = repository;
+            // _clientId = _configuration["Microsoft:ClientId"] ?? throw new InvalidOperationException("Microsoft ClientId não configurado");
+            // _clientSecret = _configuration["Microsoft:ClientSecret"] ?? throw new InvalidOperationException("Microsoft ClientSecret não configurado");
+            // _microsoftTenantId = _configuration["Microsoft:TenantId"] ?? "common";
+            // _redirectUri = _configuration["Microsoft:RedirectUri"] ?? throw new InvalidOperationException("Microsoft RedirectUri não configurado");
         }
 
         public string GetAuthUrl()
@@ -483,6 +487,59 @@ namespace Ona.Commit.Infrastructure.Integrations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar eventos alterados do Outlook Calendar");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<ExternalEventDto>> GetEventsAsync(CalendarIntegration integration)
+        {
+            try
+            {
+                var graphClient = await GetGraphClientAsync(integration);
+                var events = new List<ExternalEventDto>();
+
+                var startTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                var endTime = DateTime.UtcNow.AddDays(30).ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+                var collection = await graphClient.Me.Calendar.Events.GetAsync(config =>
+                {
+                    config.QueryParameters.Top = 100;
+                    config.QueryParameters.Orderby = ["start/dateTime"];
+                    config.QueryParameters.Filter = $"start/dateTime ge '{startTime}' and start/dateTime le '{endTime}'";
+                });
+
+                if (collection?.Value != null)
+                {
+                    foreach (var eventItem in collection.Value)
+                    {
+                        events.Add(MapToExternalEventDto(eventItem));
+                    }
+
+                    var pageIterator = PageIterator<Event, Microsoft.Graph.Models.EventCollectionResponse>
+                        .CreatePageIterator(graphClient, collection, (evt) =>
+                        {
+                            events.Add(MapToExternalEventDto(evt));
+                            return true;
+                        });
+
+                    await pageIterator.IterateAsync();
+                }
+
+                _logger.LogInformation("Sincronizados {Count} eventos do Outlook Calendar", events.Count);
+
+                var outlookEventIds = events.Select(e => e.Id).ToList();
+                var existingIds = await _repository.GetExistingExternalIdsAsync(outlookEventIds, CalendarProvider.Outlook);
+
+                foreach (var evt in events)
+                {
+                    evt.AlreadyImported = existingIds.Contains(evt.Id);
+                }
+
+                return events;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar eventos do Outlook Calendar");
                 throw;
             }
         }

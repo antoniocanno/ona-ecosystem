@@ -1,3 +1,4 @@
+using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces.Repositories;
@@ -139,6 +140,19 @@ namespace Ona.Commit.Application.Services
             }
 
             return (integration != null && integration.IsActive) ? integration : null;
+        }
+
+        public async Task<IEnumerable<ExternalEventDto>> GetEventsAsync(Guid professionalId, CalendarProvider provider)
+        {
+            var integration = await _integrationRepository.GetByProfessionalAndProviderAsync(professionalId, provider);
+            if (integration == null || !integration.IsActive) return [];
+
+            return provider switch
+            {
+                CalendarProvider.Google => await _googleCalendarService.GetEventsAsync(integration),
+                CalendarProvider.Outlook => await _outlookCalendarService.GetEventsAsync(integration),
+                _ => throw new ValidationException("Opção de calendário inválida."),
+            };
         }
     }
 }

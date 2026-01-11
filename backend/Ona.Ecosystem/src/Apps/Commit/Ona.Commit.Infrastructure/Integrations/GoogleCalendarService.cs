@@ -13,6 +13,7 @@ using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces;
+using Ona.Commit.Domain.Interfaces.Repositories;
 using Ona.Core.Common.Exceptions;
 using Ona.Core.Interfaces;
 using System.Text.Json;
@@ -30,6 +31,7 @@ namespace Ona.Commit.Infrastructure.Integrations
         private readonly string _redirectUri;
         private readonly ICryptographyService _cryptoService;
         private readonly ITenantService _tenantService;
+        private readonly ICalendarIntegrationRepository _repository;
         private static readonly string[] Scopes = { CalendarService.Scope.Calendar };
 
         public GoogleCalendarService(
@@ -38,7 +40,8 @@ namespace Ona.Commit.Infrastructure.Integrations
             ILogger<GoogleCalendarService> logger,
             ITenantService tenantService,
             ICurrentUser currentUser,
-            ICurrentTenant currentTenant)
+            ICurrentTenant currentTenant,
+            ICalendarIntegrationRepository repository)
         {
             _configuration = configuration;
             _cryptoService = cryptoService;
@@ -46,6 +49,7 @@ namespace Ona.Commit.Infrastructure.Integrations
             _tenantService = tenantService;
             _currentUser = currentUser;
             _currentTenant = currentTenant;
+            _repository = repository;
             _clientId = _configuration["Google:ClientId"] ?? "";
             _clientSecret = _configuration["Google:ClientSecret"] ?? "";
             _redirectUri = _configuration["Google:RedirectUri"] ?? "";
@@ -299,6 +303,47 @@ namespace Ona.Commit.Infrastructure.Integrations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao renovar token do Google Calendar usando SDK");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<ExternalEventDto>> GetEventsAsync(CalendarIntegration integration)
+        {
+            try
+            {
+                var service = await GetCalendarServiceAsync(integration);
+
+                var request = service.Events.List("primary");
+                request.TimeMinDateTimeOffset = DateTime.UtcNow;
+                request.TimeMaxDateTimeOffset = DateTime.UtcNow.AddDays(30);
+                request.SingleEvents = true;
+                request.MaxResults = 100;
+                request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+
+                Events events = await request.ExecuteAsync();
+                if (events.Items == null) return [];
+
+                _logger.LogInformation("Sincronizados {Count} eventos do Google Calendar", events.Items.Count);
+
+                var googleEventIds = events.Items.Select(e => e.Id).ToList();
+
+                var existingIds = await _repository.GetExistingExternalIdsAsync(googleEventIds, CalendarProvider.Google);
+
+                return events.Items.Select(e =>
+                {
+                    return new ExternalEventDto
+                    {
+                        Id = e.Id,
+                        Summary = e.Summary,
+                        Start = e.Start.DateTimeDateTimeOffset ?? DateTime.Parse(e.Start.Date),
+                        End = e.End.DateTimeDateTimeOffset ?? DateTime.Parse(e.End.Date),
+                        AlreadyImported = existingIds.Contains(e.Id)
+                    };
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar eventos do Google Calendar.");
                 throw;
             }
         }

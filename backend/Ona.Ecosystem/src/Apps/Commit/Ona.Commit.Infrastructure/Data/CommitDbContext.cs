@@ -97,6 +97,7 @@ namespace Ona.Commit.Infrastructure.Data
             {
                 entity.HasKey(c => c.Id);
                 entity.HasIndex(c => new { c.TenantId, c.ProfessionalId });
+                entity.HasIndex(c => new { c.ExternalResourceId, c.Provider, c.IsActive });
                 entity.HasOne(c => c.Professional)
                     .WithMany()
                     .HasForeignKey(c => c.ProfessionalId)
