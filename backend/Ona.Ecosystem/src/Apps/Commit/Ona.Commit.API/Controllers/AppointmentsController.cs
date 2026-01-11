@@ -52,6 +52,14 @@ namespace Ona.Commit.API.Controllers
             return Ok(appointment);
         }
 
+        [HttpPost("bulk")]
+        [AuthorizeRoles(Role.Operator)]
+        public async Task<IActionResult> CreateBulk([FromBody] IEnumerable<CreateAppointmentRequest> requests)
+        {
+            var appointments = await _appointmentAppService.CreateBulkAsync(requests);
+            return Ok(appointments);
+        }
+
 
         [HttpPatch("{id:guid}")]
         [AuthorizeRoles(Role.Operator)]

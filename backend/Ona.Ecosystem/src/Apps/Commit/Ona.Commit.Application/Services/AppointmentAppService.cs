@@ -61,9 +61,41 @@ namespace Ona.Commit.Application.Services
             appointment = await _repository.CreateAsync(appointment);
             await _repository.SaveChangesAsync();
 
-            await _calendarService.CreateAppointmentEventAsync(appointment);
+            await _calendarService.CreateAppointmentEventAsync(appointment, request.ExternalEventId, request.Provider);
 
             return appointment;
+        }
+
+        public async Task<IEnumerable<AppointmentDto>> CreateBulkAsync(IEnumerable<CreateAppointmentRequest> requests)
+        {
+            if (_currentUser.Id == Guid.Empty)
+                throw new ValidationException("Contexto do usuário é obrigatório.");
+
+            var appointments = new List<(Appointment entity, CreateAppointmentRequest request)>();
+
+            foreach (var request in requests)
+            {
+                var appointment = new Appointment(
+                    request.CustomerId,
+                    request.ProfessionalId,
+                    request.Summary,
+                    request.Description,
+                    request.StartDate.ToUniversalTime(),
+                    request.EndDate.ToUniversalTime());
+
+                await _repository.CreateAsync(appointment);
+                appointments.Add((appointment, request));
+            }
+
+            await _repository.SaveChangesAsync();
+
+            // TODO: mover para job em background se o sistema for escalado
+            var syncTasks = appointments.Select(pair =>
+                _calendarService.CreateAppointmentEventAsync(pair.entity, pair.request.ExternalEventId, pair.request.Provider));
+
+            await Task.WhenAll(syncTasks);
+
+            return appointments.Select(pair => (AppointmentDto)pair.entity);
         }
 
         public async Task<AppointmentDto> UpdateAsync(Guid id, AppointmentUpdateRequest request)

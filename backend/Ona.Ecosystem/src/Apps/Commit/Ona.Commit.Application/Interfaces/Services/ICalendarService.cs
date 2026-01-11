@@ -5,7 +5,7 @@ namespace Ona.Commit.Application.Interfaces.Services
 {
     public interface ICalendarService
     {
-        Task CreateAppointmentEventAsync(Appointment appointment);
+        Task CreateAppointmentEventAsync(Appointment appointment, string? externalEventId = null, CalendarProvider? provider = null);
         Task UpdateAppointmentEventAsync(Appointment appointment);
         Task DeleteAppointmentEventAsync(Appointment appointment);
         Task SubscribeToNotificationsAsync(Guid professionalId);

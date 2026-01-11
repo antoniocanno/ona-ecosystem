@@ -25,27 +25,44 @@ namespace Ona.Commit.Application.Services
             _outlookCalendarService = outlookCalendarService;
         }
 
-        public async Task CreateAppointmentEventAsync(Appointment appointment)
+        public async Task CreateAppointmentEventAsync(Appointment appointment, string? externalEventId = null, CalendarProvider? provider = null)
         {
+            if (!string.IsNullOrEmpty(externalEventId) && provider.HasValue)
+            {
+                var mapping = new ExternalCalendarEventMapping
+                {
+                    AppointmentId = appointment.Id,
+                    ExternalEventId = externalEventId,
+                    Provider = provider.Value,
+                    LastSyncedAt = DateTimeOffset.UtcNow
+                };
+                mapping.SetTenantId(appointment.TenantId);
+
+                await _mappingRepository.CreateAsync(mapping);
+                await _mappingRepository.SaveChangesAsync();
+                return;
+            }
+
             var integration = await GetActiveIntegrationAsync(appointment.ProfessionalId);
             if (integration == null) return;
 
-            string externalId = integration.Provider switch
+            string createdExternalId = integration.Provider switch
             {
                 CalendarProvider.Google => await _googleCalendarService.CreateEventAsync(integration, appointment),
                 CalendarProvider.Outlook => await _outlookCalendarService.CreateEventAsync(integration, appointment),
                 _ => throw new ValidationException("Opção de calendário inválida.")
             };
 
-            var mapping = new ExternalCalendarEventMapping
+            var newMapping = new ExternalCalendarEventMapping
             {
                 AppointmentId = appointment.Id,
-                ExternalEventId = externalId,
+                ExternalEventId = createdExternalId,
+                Provider = integration.Provider,
                 LastSyncedAt = DateTimeOffset.UtcNow
             };
-            mapping.SetTenantId(appointment.TenantId);
+            newMapping.SetTenantId(appointment.TenantId);
 
-            await _mappingRepository.CreateAsync(mapping);
+            await _mappingRepository.CreateAsync(newMapping);
             await _mappingRepository.SaveChangesAsync();
         }
 
@@ -54,10 +71,10 @@ namespace Ona.Commit.Application.Services
             var mapping = await _mappingRepository.GetByAppointmentIdAsync(appointment.Id);
             if (mapping == null) return;
 
-            var integration = await GetActiveIntegrationAsync(appointment.ProfessionalId);
-            if (integration == null) return;
+            var integration = await _integrationRepository.GetByProfessionalAndProviderAsync(appointment.ProfessionalId, mapping.Provider);
+            if (integration == null || !integration.IsActive) return;
 
-            switch (integration.Provider)
+            switch (mapping.Provider)
             {
                 case CalendarProvider.Google:
                     await _googleCalendarService.UpdateEventAsync(integration, appointment, mapping.ExternalEventId);
@@ -77,10 +94,10 @@ namespace Ona.Commit.Application.Services
             var mapping = await _mappingRepository.GetByAppointmentIdAsync(appointment.Id);
             if (mapping == null) return;
 
-            var integration = await GetActiveIntegrationAsync(appointment.ProfessionalId);
-            if (integration == null) return;
+            var integration = await _integrationRepository.GetByProfessionalAndProviderAsync(appointment.ProfessionalId, mapping.Provider);
+            if (integration == null || !integration.IsActive) return;
 
-            switch (integration.Provider)
+            switch (mapping.Provider)
             {
                 case CalendarProvider.Google:
                     await _googleCalendarService.DeleteEventAsync(integration, mapping.ExternalEventId);
