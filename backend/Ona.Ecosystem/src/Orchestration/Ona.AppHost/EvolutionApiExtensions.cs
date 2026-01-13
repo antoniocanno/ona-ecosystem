@@ -23,13 +23,15 @@ public static class EvolutionApiExtensions
         var evolutionSaveLabels = builder.AddParameter("Evolution-SaveDataLabels");
         var evolutionSaveHistoric = builder.AddParameter("Evolution-SaveDataHistoric");
         var evolutionTimeZone = builder.AddParameter("Evolution-TimeZone");
+        var evolutionCacheRedisEnabled = builder.AddParameter("Evolution-CacheRedisEnabled");
+        var evolutionCacheRedisUri = builder.AddParameter("Evolution-CacheRedisUri");
+        var evolutionCacheRedisPrefixKey = builder.AddParameter("Evolution-CacheRedisPrefixKey");
+        var evolutionCacheRedisSaveInstances = builder.AddParameter("Evolution-CacheRedisSaveInstances");
+        var evolutionCacheLocalEnabled = builder.AddParameter("Evolution-CacheLocalEnabled");
 
         // --- URIs de Conexão ---
         var evolutionPostgresUri = ReferenceExpression.Create(
             $"postgresql://postgres:{pgPassword}@postgres:5432/evolution-db?schema=public");
-
-        var evolutionRedisUri = ReferenceExpression.Create(
-            $"redis://cache:6379");
 
         // --- Container da Evolution API ---
         var container = builder.AddContainer("evolution-api", "atendai/evolution-api")
@@ -45,12 +47,14 @@ public static class EvolutionApiExtensions
             .WithEnvironment("DATABASE_CONNECTION_CLIENT_NAME", evolutionDbClientName)
 
             // Configuração de Cache (Redis)
-            .WithEnvironment("CACHE_REDIS_ENABLED", "true")
-            .WithEnvironment("CACHE_REDIS_URI", evolutionRedisUri)
+            .WithEnvironment("CACHE_REDIS_ENABLED", evolutionCacheRedisEnabled)
+            .WithEnvironment("CACHE_REDIS_URI", evolutionCacheRedisUri)
             .WithEnvironment("CACHE_REDIS_DB", "0")
-            .WithEnvironment("CACHE_REDIS_PREFIX", "evolution:")
-            .WithEnvironment("REDIS_ENABLED", "true")
-            .WithEnvironment("REDIS_URI", evolutionRedisUri)
+            .WithEnvironment("CACHE_REDIS_PREFIX_KEY", evolutionCacheRedisPrefixKey)
+            .WithEnvironment("REDIS_ENABLED", evolutionCacheRedisEnabled)
+            .WithEnvironment("REDIS_URI", evolutionCacheRedisUri)
+            .WithEnvironment("CACHE_REDIS_SAVE_INSTANCES", evolutionCacheRedisSaveInstances)
+            .WithEnvironment("CACHE_LOCAL_ENABLED", evolutionCacheLocalEnabled)
 
             // Flags de Persistência
             .WithEnvironment("DATABASE_SAVE_DATA_INSTANCE", evolutionSaveInstance)
