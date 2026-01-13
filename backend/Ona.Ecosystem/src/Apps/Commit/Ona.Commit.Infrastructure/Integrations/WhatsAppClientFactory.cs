@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Ona.Application.Shared.Interfaces.Services;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Interfaces;
+using Ona.Commit.Domain.Interfaces.Repositories;
 using System.Net.Http.Headers;
 
 namespace Ona.Commit.Infrastructure.Integrations
