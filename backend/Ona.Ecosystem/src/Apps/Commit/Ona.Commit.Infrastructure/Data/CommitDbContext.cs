@@ -15,6 +15,9 @@ namespace Ona.Commit.Infrastructure.Data
         public DbSet<Appointment> Appointments { get; set; } = null!;
         public DbSet<CalendarIntegration> CalendarIntegrations { get; set; } = null!;
         public DbSet<ExternalCalendarEventMapping> ExternalCalendarEventMappings { get; set; } = null!;
+        public DbSet<TenantWhatsAppConfig> TenantWhatsAppConfigs { get; set; } = null!;
+        public DbSet<WhatsAppTemplateRegistry> WhatsAppTemplateRegistries { get; set; } = null!;
+        public DbSet<MessageInteractionLog> MessageInteractionLogs { get; set; } = null!;
 
         public CommitDbContext() : base() { }
 
@@ -36,6 +39,9 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureCalendarIntegrationEntity(modelBuilder);
             ConfigureExternalCalendarEventMappingEntity(modelBuilder);
             ConfigureMessageTemplateEntity(modelBuilder);
+            ConfigureTenantWhatsAppConfigEntity(modelBuilder);
+            ConfigureWhatsAppTemplateRegistryEntity(modelBuilder);
+            ConfigureMessageInteractionLogEntity(modelBuilder);
 
             modelBuilder.ApplyTenantFilters(_currentTenant);
         }
@@ -49,6 +55,9 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<MessageTemplate>().ToTable("MessageTemplates");
             modelBuilder.Entity<CalendarIntegration>().ToTable("CalendarIntegrations");
             modelBuilder.Entity<ExternalCalendarEventMapping>().ToTable("ExternalCalendarEventMappings");
+            modelBuilder.Entity<TenantWhatsAppConfig>().ToTable("TenantWhatsAppConfigs");
+            modelBuilder.Entity<WhatsAppTemplateRegistry>().ToTable("WhatsAppTemplateRegistries");
+            modelBuilder.Entity<MessageInteractionLog>().ToTable("MessageInteractionLogs");
         }
 
         private static void ConfigureCustomerEntity(ModelBuilder modelBuilder)
@@ -119,6 +128,43 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<MessageTemplate>(entity =>
             {
                 entity.HasKey(m => m.Id);
+            });
+        }
+
+        private static void ConfigureTenantWhatsAppConfigEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TenantWhatsAppConfig>(entity =>
+            {
+                entity.HasKey(t => t.Id);
+                entity.HasIndex(t => t.TenantId).IsUnique();
+            });
+        }
+
+        private static void ConfigureWhatsAppTemplateRegistryEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WhatsAppTemplateRegistry>(entity =>
+            {
+                entity.HasKey(w => w.Id);
+                entity.HasIndex(w => new { w.TenantId, w.LogicalName }).IsUnique();
+                entity.Property(w => w.LogicalName).HasMaxLength(100).IsRequired();
+                entity.Property(w => w.MetaTemplateName).HasMaxLength(100).IsRequired();
+                entity.Property(w => w.LanguageCode).HasMaxLength(10).HasDefaultValue("pt_BR");
+            });
+        }
+
+        private static void ConfigureMessageInteractionLogEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<MessageInteractionLog>(entity =>
+            {
+                entity.HasKey(m => m.Id);
+                entity.HasIndex(m => m.ExternalMessageId);
+                entity.HasIndex(m => new { m.TenantId, m.AppointmentId });
+                entity.Property(m => m.ExternalMessageId).HasMaxLength(200).IsRequired();
+                entity.Property(m => m.EstimatedCost).HasPrecision(18, 4);
+                entity.HasOne(m => m.Appointment)
+                    .WithMany()
+                    .HasForeignKey(m => m.AppointmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
 

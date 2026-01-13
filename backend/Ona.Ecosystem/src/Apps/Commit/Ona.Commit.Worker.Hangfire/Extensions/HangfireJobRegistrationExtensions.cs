@@ -20,6 +20,11 @@ public static class HangfireJobRegistrationExtensions
             worker => worker.SendPendingRemindersAsync(),
             Cron.MinuteInterval(5));
 
+        recurringJobManager.AddOrUpdate<IDailyReminderScheduler>(
+            "whatsapp-daily-reminder-scheduler",
+            scheduler => scheduler.ScheduleDailyRemindersAsync(),
+            Cron.HourInterval(1));
+
         return host;
     }
 }

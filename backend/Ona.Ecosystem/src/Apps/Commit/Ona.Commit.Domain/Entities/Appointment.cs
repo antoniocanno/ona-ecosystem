@@ -154,6 +154,12 @@ namespace Ona.Commit.Domain.Entities
             Update();
         }
 
+        public void MarkReminderAsScheduled()
+        {
+            ReminderStatus = ReminderStatus.Scheduled;
+            Update();
+        }
+
         public void MarkReminderAsSent()
         {
             ReminderStatus = ReminderStatus.Sent;
