@@ -11,7 +11,8 @@ public static class EvolutionApiExtensions
         IResourceBuilder<RedisResource> redis)
     {
         // --- Parâmetros ---
-        var evolutionApiKey = builder.AddParameter("EvolutionApiKey", secret: true);
+        var evolutionApiKey = builder.AddParameter("Evolution-ApiKey", secret: true);
+        var evolutionApiUrl = builder.AddParameter("Evolution-ApiUrl");
         var evolutionDbEnabled = builder.AddParameter("Evolution-DatabaseEnabled");
         var evolutionDbProvider = builder.AddParameter("Evolution-DatabaseProvider");
         var evolutionDbClientName = builder.AddParameter("Evolution-DatabaseConnectionClientName");
@@ -37,7 +38,7 @@ public static class EvolutionApiExtensions
         var container = builder.AddContainer("evolution-api", "atendai/evolution-api")
             .WithEnvironment("AUTHENTICATION_TYPE", "apikey")
             .WithEnvironment("AUTHENTICATION_API_KEY", evolutionApiKey)
-            .WithEnvironment("SERVER_URL", "http://localhost:8080")
+            .WithEnvironment("SERVER_URL", evolutionApiUrl)
             .WithEnvironment("TZ", evolutionTimeZone)
 
             // Configuração de Banco de Dados (Postgres)
@@ -64,6 +65,10 @@ public static class EvolutionApiExtensions
             .WithEnvironment("DATABASE_SAVE_DATA_CHATS", evolutionSaveChats)
             .WithEnvironment("DATABASE_SAVE_DATA_LABELS", evolutionSaveLabels)
             .WithEnvironment("DATABASE_SAVE_DATA_HISTORIC", evolutionSaveHistoric)
+
+            .WithEnvironment("CONFIG_SESSION_PHONE_VERSION", "2.3000.1031952138")
+            .WithEnvironment("CONFIG_SESSION_PHONE_CLIENT", "Commit")
+            .WithEnvironment("CONFIG_SESSION_PHONE_NAME", "Chrome")
 
             .WithHttpEndpoint(targetPort: 8080, name: "api")
             .WaitFor(postgres)

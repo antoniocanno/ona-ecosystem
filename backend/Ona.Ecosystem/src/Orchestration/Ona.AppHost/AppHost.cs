@@ -38,8 +38,8 @@ var authApi = builder.AddProject<Projects.Ona_Auth_API>("ona-auth-api")
 
 builder.AddProject<Projects.Ona_Commit_Worker_Hangfire>("ona-commit-worker-hangfire")
                     .WithReference(commitDb)
-                    .WithEnvironment("WhatsApp__Evolution__ApiUrl", evolutionApi.GetEndpoint("api"))
-                    .WithEnvironment("WhatsApp__Evolution__ApiKey", evolutionApiKey)
+                    .WithEnvironment("WhatsApp:Evolution:ApiUrl", evolutionApi.GetEndpoint("api"))
+                    .WithEnvironment("WhatsApp:Evolution:ApiKey", evolutionApiKey)
                     .WaitFor(postgres)
                     .WaitFor(evolutionApi);
 
@@ -49,8 +49,8 @@ builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
                        .WithEnvironment("JwtSettings:Issuer", jwtIssuer)
                        .WithEnvironment("JwtSettings:Audience", jwtAudience)
                        .WithReference(commitDb)
-                       .WithEnvironment("WhatsApp__Evolution__ApiUrl", evolutionApi.GetEndpoint("api"))
-                       .WithEnvironment("WhatsApp__Evolution__ApiKey", evolutionApiKey)
+                       .WithEnvironment("WhatsApp:Evolution:ApiUrl", evolutionApi.GetEndpoint("api"))
+                       .WithEnvironment("WhatsApp:Evolution:ApiKey", evolutionApiKey)
                        .WaitFor(postgres)
                        .WithReference(redis);
 
