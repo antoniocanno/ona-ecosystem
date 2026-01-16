@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Ona.Auth.Domain.Entities;
-using Ona.Core.Entities;
 using Ona.Core.Interfaces;
 using Ona.Infrastructure.Shared.Data;
 

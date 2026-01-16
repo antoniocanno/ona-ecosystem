@@ -103,4 +103,16 @@ public class WhatsAppAppService : IWhatsAppAppService
             message
         );
     }
+
+    public async Task<string> SendButtonsMessageAsync(Guid tenantId, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons)
+    {
+        return await _whatsAppGateway.SendButtonsMessageAsync(
+            $"tenant_{tenantId:N}",
+            phoneNumber,
+            title,
+            description,
+            footer,
+            buttons
+        );
+    }
 }

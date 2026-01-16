@@ -11,6 +11,8 @@ namespace Ona.Commit.Application.Interfaces.Services
         Task<AppointmentDto> CreateAsync(CreateAppointmentRequest request);
         Task<IEnumerable<AppointmentDto>> CreateBulkAsync(IEnumerable<CreateAppointmentRequest> requests);
         Task<AppointmentDto> UpdateAsync(Guid id, AppointmentUpdateRequest request);
+        Task ConfirmAsync(Guid id);
+        Task CancelAsync(Guid id);
         Task DeleteAsync(Guid id);
     }
 }

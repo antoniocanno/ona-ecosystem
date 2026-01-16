@@ -1,10 +1,12 @@
-﻿using Ona.Commit.Application.DTOs.Requests;
+﻿using Microsoft.Extensions.Caching.Distributed;
+using Ona.Commit.Application.DTOs.Requests;
 using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Repositories;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Core.Common.Exceptions;
 using Ona.Core.Interfaces;
+using System.Text.Json;
 
 namespace Ona.Commit.Application.Services
 {
@@ -13,15 +15,18 @@ namespace Ona.Commit.Application.Services
         private readonly ICurrentUser _currentUser;
         private readonly IAppointmentRepository _repository;
         private readonly ICalendarService _calendarService;
+        private readonly IDistributedCache _cache;
 
         public AppointmentAppService(
             ICurrentUser currentUser,
             IAppointmentRepository repository,
-            ICalendarService calendarService)
+            ICalendarService calendarService,
+            IDistributedCache cache)
         {
             _currentUser = currentUser;
             _repository = repository;
             _calendarService = calendarService;
+            _cache = cache;
         }
 
         public async Task<IEnumerable<AppointmentDto>> ListAsync()
@@ -37,12 +42,25 @@ namespace Ona.Commit.Application.Services
 
         public async Task<AppointmentDto?> GetByIdAsync(Guid id)
         {
+            var cacheKey = $"appointment:{id}";
+            var cached = await _cache.GetStringAsync(cacheKey);
+            if (!string.IsNullOrEmpty(cached))
+            {
+                return JsonSerializer.Deserialize<AppointmentDto>(cached);
+            }
+
             var entity = await _repository.GetByIdAsync(id, a => a.Customer);
 
             if (entity == null)
                 throw new NotFoundException("Agendamento não encontrado.");
 
-            return entity;
+            var dto = (AppointmentDto)entity;
+            await _cache.SetStringAsync(cacheKey, JsonSerializer.Serialize(dto), new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
+            });
+
+            return dto;
         }
 
         public async Task<AppointmentDto> CreateAsync(CreateAppointmentRequest request)
@@ -120,6 +138,7 @@ namespace Ona.Commit.Application.Services
 
             appointment = _repository.Update(appointment);
             await _repository.SaveChangesAsync();
+            await _cache.RemoveAsync($"appointment:{id}");
 
             await _calendarService.UpdateAppointmentEventAsync(appointment);
 
@@ -136,6 +155,37 @@ namespace Ona.Commit.Application.Services
 
             _repository.Update(appointment);
             await _repository.SaveChangesAsync();
+            await _cache.RemoveAsync($"appointment:{id}");
+
+            await _calendarService.DeleteAppointmentEventAsync(appointment);
+        }
+
+        public async Task ConfirmAsync(Guid id)
+        {
+            var appointment = await _repository.GetByIdAsync(id);
+            if (appointment == null)
+                throw new NotFoundException("Agendamento não encontrado.");
+
+            appointment.Confirm();
+
+            _repository.Update(appointment);
+            await _repository.SaveChangesAsync();
+            await _cache.RemoveAsync($"appointment:{id}");
+
+            await _calendarService.UpdateAppointmentEventAsync(appointment);
+        }
+
+        public async Task CancelAsync(Guid id)
+        {
+            var appointment = await _repository.GetByIdAsync(id);
+            if (appointment == null)
+                throw new NotFoundException("Agendamento não encontrado.");
+
+            appointment.UpdateStatus(Ona.Commit.Domain.Enums.AppointmentStatus.Canceled);
+
+            _repository.Update(appointment);
+            await _repository.SaveChangesAsync();
+            await _cache.RemoveAsync($"appointment:{id}");
 
             await _calendarService.DeleteAppointmentEventAsync(appointment);
         }

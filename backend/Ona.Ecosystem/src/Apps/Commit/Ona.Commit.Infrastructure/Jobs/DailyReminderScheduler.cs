@@ -40,6 +40,7 @@ namespace Ona.Commit.Infrastructure.Jobs
             var tomorrowEnd = tomorrowStart.AddDays(1).AddTicks(-1);
 
             var appointmentsToRemind = await _context.Appointments
+                .AsNoTracking()
                 .Where(a => a.Status == AppointmentStatus.Confirmed &&
                             a.ReminderStatus == ReminderStatus.Pending &&
                             a.StartDate >= tomorrowStart &&

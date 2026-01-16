@@ -48,11 +48,11 @@ public static class EvolutionApiExtensions
 
             // Configuração de Cache (Redis)
             .WithEnvironment("CACHE_REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("CACHE_REDIS_URI", ReferenceExpression.Create($"redis://{redis.GetEndpoint("tcp")}/0"))
+            .WithEnvironment("CACHE_REDIS_URI", ReferenceExpression.Create($"redis://{redis.Resource.Name}:6379"))
             .WithEnvironment("CACHE_REDIS_PREFIX_KEY", evolutionCacheRedisPrefixKey)
             .WithEnvironment("CACHE_REDIS_SAVE_INSTANCES", evolutionCacheRedisSaveInstances)
             .WithEnvironment("REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("REDIS_URI", ReferenceExpression.Create($"redis://{redis.GetEndpoint("tcp")}/0"))
+            .WithEnvironment("REDIS_URI", ReferenceExpression.Create($"redis://{redis.Resource.Name}:6379"))
             .WithEnvironment("CACHE_LOCAL_ENABLED", evolutionCacheLocalEnabled)
 
             // Flags de Persistência

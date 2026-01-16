@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ona.Commit.Domain.Entities;
-using Ona.Core.Entities;
 using Ona.Core.Interfaces;
 using Ona.Infrastructure.Shared.Data;
 
@@ -19,7 +18,6 @@ namespace Ona.Commit.Infrastructure.Data
         public DbSet<TenantWhatsAppConfig> TenantWhatsAppConfigs { get; set; } = null!;
         public DbSet<WhatsAppTemplateRegistry> WhatsAppTemplateRegistries { get; set; } = null!;
         public DbSet<MessageInteractionLog> MessageInteractionLogs { get; set; } = null!;
-        public DbSet<Tenant> Tenants { get; set; } = null!;
 
         public CommitDbContext() : base() { }
 
@@ -44,7 +42,6 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureTenantWhatsAppConfigEntity(modelBuilder);
             ConfigureWhatsAppTemplateRegistryEntity(modelBuilder);
             ConfigureMessageInteractionLogEntity(modelBuilder);
-            ConfigureTenantEntity(modelBuilder);
 
             modelBuilder.ApplyTenantFilters(_currentTenant);
         }
@@ -61,7 +58,6 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<TenantWhatsAppConfig>().ToTable("TenantWhatsAppConfigs");
             modelBuilder.Entity<WhatsAppTemplateRegistry>().ToTable("WhatsAppTemplateRegistries");
             modelBuilder.Entity<MessageInteractionLog>().ToTable("MessageInteractionLogs");
-            modelBuilder.Entity<Tenant>().ToTable("Tenants");
         }
 
         private static void ConfigureCustomerEntity(ModelBuilder modelBuilder)
@@ -153,15 +149,6 @@ namespace Ona.Commit.Infrastructure.Data
                 entity.Property(w => w.LogicalName).HasMaxLength(100).IsRequired();
                 entity.Property(w => w.MetaTemplateName).HasMaxLength(100).IsRequired();
                 entity.Property(w => w.LanguageCode).HasMaxLength(10).HasDefaultValue("pt_BR");
-            });
-        }
-
-        private static void ConfigureTenantEntity(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<Tenant>(entity =>
-            {
-                entity.HasKey(t => t.Id);
-                // Mapeia outras propriedades se necessário, mas por convenção o EF Core já deve resolver
             });
         }
 

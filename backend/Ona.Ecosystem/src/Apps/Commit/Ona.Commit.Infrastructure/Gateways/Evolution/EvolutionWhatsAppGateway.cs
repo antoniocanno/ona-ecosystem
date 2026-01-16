@@ -170,6 +170,49 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
             var result = await response.Content.ReadFromJsonAsync<EvolutionSendMessageResponse>();
             return result?.Key?.Id ?? "unknown";
         }
+
+        public async Task<string> SendButtonsMessageAsync(string instanceName, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons)
+        {
+            _logger.LogInformation("Enviando mensagem com botões via instância {InstanceName} para {PhoneNumber}", instanceName, phoneNumber);
+
+            var formattedPhone = phoneNumber.Replace("+", "").Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+
+            var request = new
+            {
+                number = formattedPhone,
+                title,
+                description,
+                footer,
+                buttons = buttons.Select(b => new
+                {
+                    type = b.Type,
+                    displayText = b.DisplayText,
+                    id = b.Id,
+                    copyCode = b.CopyCode,
+                    url = b.Url,
+                    phoneNumber = b.PhoneNumber,
+                    currency = b.Currency,
+                    name = b.Name,
+                    keyType = b.KeyType,
+                    key = b.Key
+                }).ToList()
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"/message/sendButtons/{instanceName}", request, new System.Text.Json.JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Erro ao enviar mensagem com botões: {StatusCode} - {Response}", response.StatusCode, error);
+                throw new HttpRequestException($"Falha ao enviar mensagem com botões: {error}");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<EvolutionSendMessageResponse>();
+            return result?.Key?.Id ?? "unknown";
+        }
     }
 
     #region Evolution API Response Models

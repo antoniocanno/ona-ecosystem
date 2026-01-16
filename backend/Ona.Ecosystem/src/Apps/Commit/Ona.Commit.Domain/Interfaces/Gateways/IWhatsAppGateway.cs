@@ -48,14 +48,36 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         /// <param name="message">Mensagem a ser enviada</param>
         /// <returns>ID da mensagem enviada</returns>
         Task<string> SendTextMessageAsync(string instanceName, string phoneNumber, string message);
+        /// <summary>
+        /// Envia uma mensagem com botões interativos via WhatsApp
+        /// </summary>
+        /// <param name="instanceName">Nome da instância</param>
+        /// <param name="phoneNumber">Número de telefone do destinatário</param>
+        /// <param name="title">Título da mensagem</param>
+        /// <param name="description">Descrição/Corpo da mensagem</param>
+        /// <param name="footer">Rodapé da mensagem</param>
+        /// <param name="buttons">Lista de botões</param>
+        /// <returns>ID da mensagem enviada</returns>
+        Task<string> SendButtonsMessageAsync(string instanceName, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons);
     }
 }
 
 namespace Ona.Commit.Domain.Interfaces.Gateways
 {
-    /// <summary>
-    /// Resposta da criação de uma instância
-    /// </summary>
+    public class WhatsAppButton
+    {
+        public string Type { get; set; } = "reply";
+        public string DisplayText { get; set; } = string.Empty;
+        public string? Id { get; set; }
+        public string? CopyCode { get; set; }
+        public string? Url { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Currency { get; set; }
+        public string? Name { get; set; }
+        public string? KeyType { get; set; }
+        public string? Key { get; set; }
+    }
+
     public class WhatsAppInstanceResponse
     {
         public string InstanceName { get; set; } = string.Empty;
@@ -63,9 +85,6 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         public string? QrCodeBase64 { get; set; }
     }
 
-    /// <summary>
-    /// Resposta do QR Code
-    /// </summary>
     public class WhatsAppQrCodeResponse
     {
         public string QrCodeBase64 { get; set; } = string.Empty;
@@ -73,9 +92,6 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         public int? ExpiresIn { get; set; }
     }
 
-    /// <summary>
-    /// Status da conexão do WhatsApp
-    /// </summary>
     public class WhatsAppConnectionStatus
     {
         public string InstanceName { get; set; } = string.Empty;

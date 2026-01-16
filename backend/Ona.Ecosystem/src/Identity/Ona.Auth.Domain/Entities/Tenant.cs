@@ -1,6 +1,7 @@
 using Ona.Core.Common.Enums;
+using Ona.Core.Entities;
 
-namespace Ona.Core.Entities
+namespace Ona.Auth.Domain.Entities
 {
     public class Tenant : BaseEntity
     {

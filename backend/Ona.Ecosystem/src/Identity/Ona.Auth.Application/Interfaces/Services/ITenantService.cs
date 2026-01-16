@@ -1,5 +1,5 @@
 using Ona.Application.Shared.DTOs.Tenants;
-using Ona.Core.Entities;
+using Ona.Auth.Domain.Entities;
 
 namespace Ona.Auth.Application.Interfaces.Services
 {

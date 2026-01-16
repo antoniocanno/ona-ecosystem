@@ -160,11 +160,79 @@ namespace Ona.Commit.API.Controllers
                 return StatusCode(500, new { message = "Erro ao enviar mensagem", error = ex.Message });
             }
         }
+        /// <summary>
+        /// Envia uma mensagem com botões de teste (apenas para debug/validação)
+        /// </summary>
+        [HttpPost("send-buttons-test")]
+        [AuthorizeRoles(Role.Operator)]
+        public async Task<IActionResult> SendTestButtonMessage([FromBody] SendTestButtonMessageRequest request)
+        {
+            try
+            {
+                var buttons = request.Buttons.Select(b => new Ona.Commit.Domain.Interfaces.Gateways.WhatsAppButton
+                {
+                    Type = b.Type,
+                    DisplayText = b.DisplayText,
+                    Id = b.Id,
+                    CopyCode = b.CopyCode,
+                    Url = b.Url,
+                    PhoneNumber = b.PhoneNumber,
+                    Currency = b.Currency,
+                    Name = b.Name,
+                    KeyType = b.KeyType,
+                    Key = b.Key
+                }).ToList();
+
+                var messageId = await _appService.SendButtonsMessageAsync(
+                    _currentTenant.Id.Value,
+                    request.PhoneNumber,
+                    request.Title,
+                    request.Description,
+                    request.Footer,
+                    buttons
+                );
+
+                return Ok(new
+                {
+                    success = true,
+                    messageId = messageId,
+                    message = "Mensagem com botões enviada com sucesso"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao enviar mensagem com botões de teste");
+                return StatusCode(500, new { message = "Erro ao enviar mensagem", error = ex.Message });
+            }
+        }
     }
 
     public class SendTestMessageRequest
     {
         public string PhoneNumber { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+    }
+
+    public class SendTestButtonMessageRequest
+    {
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Footer { get; set; } = string.Empty;
+        public List<TestButton> Buttons { get; set; } = new();
+    }
+
+    public class TestButton
+    {
+        public string Type { get; set; } = "reply";
+        public string DisplayText { get; set; } = string.Empty;
+        public string? Id { get; set; }
+        public string? CopyCode { get; set; }
+        public string? Url { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Currency { get; set; }
+        public string? Name { get; set; }
+        public string? KeyType { get; set; }
+        public string? Key { get; set; }
     }
 }

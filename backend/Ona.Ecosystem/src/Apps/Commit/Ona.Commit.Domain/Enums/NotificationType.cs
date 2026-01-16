@@ -3,8 +3,7 @@
     public enum NotificationType
     {
         BookingConfirmation = 1,
-        Reminder24h = 2,
-        Reminder2h = 3,
-        Recovery = 4
+        Reminder = 2,
+        Recovery = 3
     }
 }

@@ -108,7 +108,7 @@ public static class Extensions
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddSingleton<ICurrentUser, CurrentUser>();
         builder.Services.AddSingleton<ICurrentTenant, CurrentTenant>();
-        builder.Services.AddSingleton<ITenantContextAccessor, TenantContextAccessor>();
+        builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
 
         builder.Services.AddTransient<InternalApiKeyHandler>();
 
