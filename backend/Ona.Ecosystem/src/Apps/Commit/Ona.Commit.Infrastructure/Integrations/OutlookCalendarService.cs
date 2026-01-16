@@ -5,7 +5,6 @@ using Microsoft.Graph;
 using Microsoft.Graph.Models;
 using Microsoft.Identity.Client;
 using Microsoft.Kiota.Abstractions.Authentication;
-using Ona.Application.Shared.Interfaces.Services;
 using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
@@ -13,6 +12,7 @@ using Ona.Commit.Domain.Interfaces;
 using Ona.Commit.Domain.Interfaces.Repositories;
 using Ona.Core.Common.Exceptions;
 using Ona.Core.Interfaces;
+using Ona.Core.Tenant;
 using System.Text.Json;
 
 namespace Ona.Commit.Infrastructure.Integrations
@@ -28,7 +28,7 @@ namespace Ona.Commit.Infrastructure.Integrations
         private readonly string _microsoftTenantId;
         private readonly string _redirectUri;
         private readonly ICryptographyService _cryptoService;
-        private readonly ITenantService _tenantService;
+        private readonly ITenantProvider _tenantProvider;
         private readonly IDistributedCache _distributedCache;
         private readonly ICalendarIntegrationRepository _repository;
         private static readonly string[] Scopes = { "Calendars.ReadWrite", "offline_access" };
@@ -37,7 +37,7 @@ namespace Ona.Commit.Infrastructure.Integrations
             IConfiguration configuration,
             ICryptographyService cryptoService,
             ILogger<OutlookCalendarService> logger,
-            ITenantService tenantService,
+            ITenantProvider tenantProvider,
             ICurrentUser currentUser,
             ICurrentTenant currentTenant,
             IDistributedCache distributedCache,
@@ -46,7 +46,7 @@ namespace Ona.Commit.Infrastructure.Integrations
             _configuration = configuration;
             _cryptoService = cryptoService;
             _logger = logger;
-            _tenantService = tenantService;
+            _tenantProvider = tenantProvider;
             _currentUser = currentUser;
             _currentTenant = currentTenant;
             _distributedCache = distributedCache;
@@ -555,7 +555,7 @@ namespace Ona.Commit.Infrastructure.Integrations
 
         private async Task<string> GetTenantTimeZoneAsync(Guid tenantId)
         {
-            var tenant = await _tenantService.GetByIdAsync(tenantId);
+            var tenant = await _tenantProvider.GetAsync(tenantId);
             var ianaTimeZone = tenant?.TimeZone ?? "America/Sao_Paulo";
 
             try

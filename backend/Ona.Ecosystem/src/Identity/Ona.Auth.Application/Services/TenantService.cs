@@ -1,8 +1,10 @@
 using Mapster;
+using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Ona.Application.Shared.DTOs.Tenants;
-using Ona.Application.Shared.Interfaces.Services;
+using Ona.Application.Shared.Events;
 using Ona.Auth.Application.Interfaces.Repositories;
+using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Domain.Entities;
 using Ona.Core.Common.Enums;
 using Ona.Core.Common.Exceptions;
@@ -20,6 +22,7 @@ namespace Ona.Auth.Application.Services
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly ICurrentUser _currentUser;
+        private readonly IPublishEndpoint _publishEndpoint;
 
         public TenantService(
             IUnitOfWork unitOfWork,
@@ -28,7 +31,8 @@ namespace Ona.Auth.Application.Services
             IApplicationRoleRepository roleRepository,
             UserManager<ApplicationUser> userManager,
             RoleManager<ApplicationRole> roleManager,
-            ICurrentUser currentUser)
+            ICurrentUser currentUser,
+            IPublishEndpoint publishEndpoint)
         {
             _unitOfWork = unitOfWork;
             _tenantRepository = tenantRepository;
@@ -37,6 +41,7 @@ namespace Ona.Auth.Application.Services
             _userManager = userManager;
             _roleManager = roleManager;
             _currentUser = currentUser;
+            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<Tenant> CreateTenantAsync(CreateTenantRequest request)
@@ -108,6 +113,8 @@ namespace Ona.Auth.Application.Services
 
             _tenantRepository.Update(tenant);
             await _unitOfWork.CommitAsync();
+
+            await _publishEndpoint.Publish(new TenantUpdatedEvent(tenant.Id, tenant.TimeZone, DateTimeOffset.UtcNow));
 
             return tenant.Adapt<TenantDto>();
         }

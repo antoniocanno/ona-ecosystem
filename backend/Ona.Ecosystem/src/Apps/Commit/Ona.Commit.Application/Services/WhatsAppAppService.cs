@@ -1,6 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Ona.Application.Shared.DTOs.Tenants;
-using Ona.Application.Shared.Interfaces.Services;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Interfaces.Gateways;
 
@@ -8,16 +6,13 @@ namespace Ona.Commit.Application.Services;
 
 public class WhatsAppAppService : IWhatsAppAppService
 {
-    private readonly ITenantService _tenantService;
     private readonly IWhatsAppGateway _whatsAppGateway;
     private readonly ILogger<WhatsAppAppService> _logger;
 
     public WhatsAppAppService(
-        ITenantService tenantService,
         IWhatsAppGateway whatsAppGateway,
         ILogger<WhatsAppAppService> logger)
     {
-        _tenantService = tenantService;
         _whatsAppGateway = whatsAppGateway;
         _logger = logger;
     }
@@ -26,40 +21,51 @@ public class WhatsAppAppService : IWhatsAppAppService
     {
         var instanceName = $"tenant_{tenantId:N}";
 
-        // Tenta obter o status primeiro para verificar se já existe uma instância
-        WhatsAppConnectionStatus? existingStatus = null;
+        WhatsAppConnectionStatus? status = null;
+        bool instanceExists = false;
+
         try
         {
-            existingStatus = await _whatsAppGateway.GetConnectionStatusAsync(instanceName);
+            status = await _whatsAppGateway.GetConnectionStatusAsync(instanceName);
 
-            // Se já está conectado, retorna o status
-            if (existingStatus.IsConnected)
-            {
-                return new WhatsAppInstanceResponse
-                {
-                    InstanceName = instanceName,
-                    Status = "connected",
-                    QrCodeBase64 = null
-                };
-            }
+            if (status.State != "not_found")
+                instanceExists = true;
+            else
+                instanceExists = false;
         }
         catch (Exception)
         {
-            // Instância não existe ainda, vamos criar
-            _logger.LogInformation("Instância não existe, criando nova para tenant {TenantId}", tenantId);
+            _logger.LogError("Erro ao buscar status da instância {InstanceName}", instanceName);
+            throw;
         }
 
-        // Cria ou reconecta a instância
-        WhatsAppInstanceResponse instanceResponse;
+        if (instanceExists && status != null && status.IsConnected)
+        {
+            return new WhatsAppInstanceResponse
+            {
+                InstanceName = instanceName,
+                Status = "connected",
+                QrCodeBase64 = null
+            };
+        }
+
+        if (!instanceExists)
+        {
+            try
+            {
+                await _whatsAppGateway.CreateInstanceAsync(tenantId, instanceName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao criar instância {InstanceName}", instanceName);
+                throw;
+            }
+        }
+
         try
         {
-            instanceResponse = await _whatsAppGateway.CreateInstanceAsync(tenantId, instanceName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Erro ao criar instância para tenant {TenantId}", tenantId);
-
             var qrCodeResponse = await _whatsAppGateway.GetQrCodeAsync(instanceName);
+
             return new WhatsAppInstanceResponse
             {
                 InstanceName = instanceName,
@@ -67,8 +73,11 @@ public class WhatsAppAppService : IWhatsAppAppService
                 QrCodeBase64 = qrCodeResponse.QrCodeBase64
             };
         }
-
-        return instanceResponse;
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Erro ao buscar QR Code para {InstanceName}", instanceName);
+            throw;
+        }
     }
 
     public async Task<WhatsAppQrCodeResponse> GetQrCodeAsync(Guid tenantId)

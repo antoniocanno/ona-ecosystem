@@ -1,11 +1,15 @@
+using MassTransit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Ona.Core.Interfaces;
+using Ona.Core.Tenant;
+using Ona.Infrastructure.Shared.Integrations;
 using Ona.ServiceDefaults.ApiExtensions;
 using Ona.ServiceDefaults.Services;
 using OpenTelemetry;
@@ -43,9 +47,38 @@ public static class Extensions
         builder.Services.AddJwtAuthentication(builder.Configuration);
         builder.Services.AddDistributedMemoryCache();
 
+        builder.Services.AddMemoryCache();
         builder.Services.AddHttpContextAccessor();
+
         builder.Services.AddSingleton<ICurrentUser, CurrentUser>();
         builder.Services.AddSingleton<ICurrentTenant, CurrentTenant>();
+        builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
+
+        builder.Services.AddTransient<InternalApiKeyHandler>();
+
+        builder.Services.AddHttpClient<ITenantProvider, TenantHttpClient>(client =>
+        {
+            client.BaseAddress = new Uri("http://ona-auth-api");
+        })
+        .AddHttpMessageHandler<InternalApiKeyHandler>()
+        .AddServiceDiscovery()
+        .AddStandardResilienceHandler();
+
+        builder.Services.AddMassTransit(x =>
+        {
+            x.AddConsumer<TenantUpdatedConsumer>();
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var connectionString = builder.Configuration.GetConnectionString("rabbitmq");
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    cfg.Host(connectionString);
+                }
+
+                cfg.ConfigureEndpoints(context);
+            });
+        });
 
         builder.AddCustomSerilog();
 
@@ -71,9 +104,37 @@ public static class Extensions
 
         builder.Services.AddDistributedMemoryCache();
 
+        builder.Services.AddMemoryCache();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddSingleton<ICurrentUser, CurrentUser>();
         builder.Services.AddSingleton<ICurrentTenant, CurrentTenant>();
+        builder.Services.AddSingleton<ITenantContextAccessor, TenantContextAccessor>();
+
+        builder.Services.AddTransient<InternalApiKeyHandler>();
+
+        builder.Services.AddHttpClient<ITenantProvider, TenantHttpClient>(client =>
+        {
+            client.BaseAddress = new Uri("http://ona-auth-api");
+        })
+        .AddHttpMessageHandler<InternalApiKeyHandler>()
+        .AddServiceDiscovery()
+        .AddStandardResilienceHandler();
+
+        builder.Services.AddMassTransit(x =>
+        {
+            x.AddConsumer<TenantUpdatedConsumer>();
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var connectionString = builder.Configuration.GetConnectionString("rabbitmq");
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    cfg.Host(connectionString);
+                }
+
+                cfg.ConfigureEndpoints(context);
+            });
+        });
 
         builder.AddCustomSerilog();
 

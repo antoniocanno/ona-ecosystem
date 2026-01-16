@@ -6,6 +6,7 @@ var builder = DistributedApplication.CreateBuilder(args);
 var jwtSecret = builder.AddParameter("JwtSecret", secret: true);
 var jwtIssuer = builder.AddParameter("JwtIssuer");
 var jwtAudience = builder.AddParameter("JwtAudience");
+var internalApiKey = builder.AddParameter("InternalApiKey", secret: true);
 var password = builder.AddParameter("pg-password", secret: true);
 
 // --- Infraestrutura (Postgres e Redis) ---
@@ -21,6 +22,8 @@ var commitDb = postgres.AddDatabase("commit-db");
 var evolutionDb = postgres.AddDatabase("evolution-db");
 
 var redis = builder.AddRedis("cache");
+var rabbitMq = builder.AddRabbitMQ("rabbitmq")
+                      .WithManagementPlugin();
 
 // --- Container da Evolution API ---
 var evolution = builder.AddEvolutionApi(postgres, password, redis);
@@ -32,15 +35,22 @@ var authApi = builder.AddProject<Projects.Ona_Auth_API>("ona-auth-api")
                      .WithEnvironment("JwtSettings:Secret", jwtSecret)
                      .WithEnvironment("JwtSettings:Issuer", jwtIssuer)
                      .WithEnvironment("JwtSettings:Audience", jwtAudience)
+                     .WithEnvironment("Auth:InternalApiKey", internalApiKey)
                      .WithReference(authDb)
+                     .WithReference(redis)
+                     .WithReference(rabbitMq)
                      .WaitFor(postgres)
-                     .WithReference(redis);
+                     .WaitFor(rabbitMq)
+                     .WaitFor(postgres);
 
 builder.AddProject<Projects.Ona_Commit_Worker_Hangfire>("ona-commit-worker-hangfire")
                     .WithReference(commitDb)
                     .WithEnvironment("WhatsApp:Evolution:ApiUrl", evolutionApi.GetEndpoint("api"))
                     .WithEnvironment("WhatsApp:Evolution:ApiKey", evolutionApiKey)
+                    .WithEnvironment("Auth:InternalApiKey", internalApiKey)
+                    .WithReference(rabbitMq)
                     .WaitFor(postgres)
+                    .WaitFor(rabbitMq)
                     .WaitFor(evolutionApi);
 
 builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
@@ -48,10 +58,13 @@ builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
                        .WithEnvironment("JwtSettings:Secret", jwtSecret)
                        .WithEnvironment("JwtSettings:Issuer", jwtIssuer)
                        .WithEnvironment("JwtSettings:Audience", jwtAudience)
+                       .WithEnvironment("Auth:InternalApiKey", internalApiKey)
                        .WithReference(commitDb)
                        .WithEnvironment("WhatsApp:Evolution:ApiUrl", evolutionApi.GetEndpoint("api"))
                        .WithEnvironment("WhatsApp:Evolution:ApiKey", evolutionApiKey)
+                       .WithReference(redis)
+                       .WithReference(rabbitMq)
                        .WaitFor(postgres)
-                       .WithReference(redis);
+                       .WaitFor(rabbitMq);
 
 builder.Build().Run();

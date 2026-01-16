@@ -25,7 +25,7 @@ public class Program
 
         builder.Services.AddHangfireServer();
 
-        // Register Application/Infrastructure Services (including ICalendarSyncWorker)
+        builder.Services.AddMemoryCache();
         builder.Services.AddInfrastructure(builder.Configuration);
 
         var host = builder.Build();

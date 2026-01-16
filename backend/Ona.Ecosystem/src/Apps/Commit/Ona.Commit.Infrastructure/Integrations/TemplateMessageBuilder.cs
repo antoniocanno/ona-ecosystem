@@ -1,8 +1,8 @@
 using Newtonsoft.Json;
-using Ona.Application.Shared.Interfaces.Services;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces.Repositories;
+using Ona.Core.Tenant;
 using System.Globalization;
 
 namespace Ona.Commit.Infrastructure.Integrations
@@ -11,22 +11,22 @@ namespace Ona.Commit.Infrastructure.Integrations
     {
         private readonly IWhatsAppTemplateRegistryRepository _registryRepository;
         private readonly ITenantWhatsAppConfigRepository _configRepository;
-        private readonly ITenantService _tenantService;
+        private readonly ITenantProvider _tenantProvider;
 
         public TemplateMessageBuilder(
             IWhatsAppTemplateRegistryRepository registryRepository,
             ITenantWhatsAppConfigRepository configRepository,
-            ITenantService tenantService)
+            ITenantProvider tenantProvider)
         {
             _registryRepository = registryRepository;
             _configRepository = configRepository;
-            _tenantService = tenantService;
+            _tenantProvider = tenantProvider;
         }
 
         public async Task<string> BuildReminderPayloadAsync(Appointment appointment)
         {
             var tenantId = appointment.TenantId;
-            var tenant = await _tenantService.GetByIdAsync(tenantId);
+            var tenant = await _tenantProvider.GetAsync(tenantId);
             var clinicName = tenant?.Name ?? "Nossa Clínica";
 
             var config = await _configRepository.GetByTenantIdAsync(tenantId);

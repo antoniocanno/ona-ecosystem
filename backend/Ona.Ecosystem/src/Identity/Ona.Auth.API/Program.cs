@@ -1,7 +1,10 @@
 ﻿using Ona.Auth.API.Extensions;
+using Ona.Auth.API.Middlewares;
 using Ona.Auth.Application.Extensions;
+using Ona.Auth.Application.Services;
 using Ona.Auth.Infrastructure.Data;
 using Ona.Auth.Infrastructure.Extensions;
+using Ona.Core.Tenant;
 using Ona.ServiceDefaults;
 
 namespace Ona.Auth.API
@@ -31,6 +34,8 @@ namespace Ona.Auth.API
             builder.Services.AddInfrastructure(builder.Configuration);
             builder.Services.AddApplication(builder.Configuration);
 
+            builder.Services.AddScoped<ITenantProvider, DbTenantProvider>();
+
             var app = builder.Build();
 
             app.MapDefaultEndpoints();
@@ -47,6 +52,8 @@ namespace Ona.Auth.API
             app.AddServiceDefaults();
 
             app.UseHttpsRedirection();
+
+            app.UseMiddleware<InternalApiKeyMiddleware>();
 
             app.UseAuthorization();
 

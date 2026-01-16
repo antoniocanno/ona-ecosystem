@@ -79,7 +79,7 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
     public class WhatsAppConnectionStatus
     {
         public string InstanceName { get; set; } = string.Empty;
-        public string State { get; set; } = string.Empty; // "open", "close", "connecting"
+        public string State { get; set; } = string.Empty;
         public bool IsConnected { get; set; }
         public string? PhoneNumber { get; set; }
     }

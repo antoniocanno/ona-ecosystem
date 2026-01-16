@@ -7,10 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="9.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.22" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Ona.Application.Shared\Ona.Application.Shared.csproj" />
     <ProjectReference Include="..\Ona.Core\Ona.Core.csproj" />
   </ItemGroup>
 

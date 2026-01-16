@@ -25,7 +25,6 @@ public static class EvolutionApiExtensions
         var evolutionSaveHistoric = builder.AddParameter("Evolution-SaveDataHistoric");
         var evolutionTimeZone = builder.AddParameter("Evolution-TimeZone");
         var evolutionCacheRedisEnabled = builder.AddParameter("Evolution-CacheRedisEnabled");
-        var evolutionCacheRedisUri = builder.AddParameter("Evolution-CacheRedisUri");
         var evolutionCacheRedisPrefixKey = builder.AddParameter("Evolution-CacheRedisPrefixKey");
         var evolutionCacheRedisSaveInstances = builder.AddParameter("Evolution-CacheRedisSaveInstances");
         var evolutionCacheLocalEnabled = builder.AddParameter("Evolution-CacheLocalEnabled");
@@ -49,12 +48,11 @@ public static class EvolutionApiExtensions
 
             // Configuração de Cache (Redis)
             .WithEnvironment("CACHE_REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("CACHE_REDIS_URI", evolutionCacheRedisUri)
-            .WithEnvironment("CACHE_REDIS_DB", "0")
+            .WithEnvironment("CACHE_REDIS_URI", ReferenceExpression.Create($"redis://{redis.GetEndpoint("tcp")}/0"))
             .WithEnvironment("CACHE_REDIS_PREFIX_KEY", evolutionCacheRedisPrefixKey)
-            .WithEnvironment("REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("REDIS_URI", evolutionCacheRedisUri)
             .WithEnvironment("CACHE_REDIS_SAVE_INSTANCES", evolutionCacheRedisSaveInstances)
+            .WithEnvironment("REDIS_ENABLED", evolutionCacheRedisEnabled)
+            .WithEnvironment("REDIS_URI", ReferenceExpression.Create($"redis://{redis.GetEndpoint("tcp")}/0"))
             .WithEnvironment("CACHE_LOCAL_ENABLED", evolutionCacheLocalEnabled)
 
             // Flags de Persistência

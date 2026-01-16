@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Ona.Core\Ona.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Interfaces\Services\" />
+  </ItemGroup>
+
 </Project>

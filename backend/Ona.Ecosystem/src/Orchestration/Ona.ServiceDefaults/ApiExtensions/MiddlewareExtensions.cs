@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Ona.ServiceDefaults.Middleware;
+using Ona.ServiceDefaults.Middlewares;
 
 namespace Ona.ServiceDefaults.ApiExtensions
 {

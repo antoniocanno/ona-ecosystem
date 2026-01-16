@@ -28,6 +28,7 @@ namespace Ona.Commit.API
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            builder.Services.AddMemoryCache();
             builder.Services.AddInfrastructure(builder.Configuration);
 
             builder.Services.AddHangfire(configuration => configuration
@@ -35,7 +36,6 @@ namespace Ona.Commit.API
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
                 .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("commit-db"))));
-
 
             var app = builder.Build();
 

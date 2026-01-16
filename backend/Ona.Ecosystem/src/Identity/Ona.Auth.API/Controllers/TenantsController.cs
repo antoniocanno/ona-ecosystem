@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ona.Application.Shared.DTOs.Tenants;
-using Ona.Application.Shared.Interfaces.Services;
+using Ona.Auth.Application.Interfaces.Services;
 using Ona.Core.Common.Enums;
 using Ona.ServiceDefaults.Attributes;
 
@@ -29,6 +29,7 @@ namespace Ona.Auth.API.Controllers
 
         [HttpGet("{id:guid}")]
         [AuthorizeRoles(Role.Manager)]
+        [SkipTenantValidation]
         public async Task<IActionResult> GetById(Guid id)
         {
             var tenant = await _tenantService.GetByIdAsync(id);

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Ona.ServiceDefaults.Attributes;
 
-namespace Ona.ServiceDefaults.Middleware
+namespace Ona.ServiceDefaults.Middlewares
 {
     public class EmailVerificationMiddleware
     {
