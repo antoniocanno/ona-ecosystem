@@ -30,57 +30,10 @@ public static class Extensions
     {
         builder.ConfigureOpenTelemetry();
 
-        builder.AddDefaultHealthChecks();
-
-        builder.Services.AddServiceDiscovery();
-
-        builder.Services.ConfigureHttpClientDefaults(http =>
-        {
-            // Turn on resilience by default
-            http.AddStandardResilienceHandler();
-
-            // Turn on service discovery by default
-            http.AddServiceDiscovery();
-        });
+        builder.AddCommonServiceDefaults();
 
         builder.Services.AddSwaggerDocumentation();
         builder.Services.AddJwtAuthentication(builder.Configuration);
-        builder.Services.AddDistributedMemoryCache();
-
-        builder.Services.AddMemoryCache();
-        builder.Services.AddHttpContextAccessor();
-
-        builder.Services.AddSingleton<ICurrentUser, CurrentUser>();
-        builder.Services.AddSingleton<ICurrentTenant, CurrentTenant>();
-        builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
-
-        builder.Services.AddTransient<InternalApiKeyHandler>();
-
-        builder.Services.AddHttpClient<ITenantProvider, TenantHttpClient>(client =>
-        {
-            client.BaseAddress = new Uri("http://ona-auth-api");
-        })
-        .AddHttpMessageHandler<InternalApiKeyHandler>()
-        .AddServiceDiscovery()
-        .AddStandardResilienceHandler();
-
-        builder.Services.AddMassTransit(x =>
-        {
-            x.AddConsumer<TenantUpdatedConsumer>();
-
-            x.UsingRabbitMq((context, cfg) =>
-            {
-                var connectionString = builder.Configuration.GetConnectionString("rabbitmq");
-                if (!string.IsNullOrEmpty(connectionString))
-                {
-                    cfg.Host(connectionString);
-                }
-
-                cfg.ConfigureEndpoints(context);
-            });
-        });
-
-        builder.AddCustomSerilog();
 
         builder.ConfigureRoute();
 
@@ -89,23 +42,34 @@ public static class Extensions
 
     public static TBuilder AddWorkerServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
+        return builder.AddCommonServiceDefaults();
+    }
+
+    private static TBuilder AddCommonServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
         builder.AddDefaultHealthChecks();
 
         builder.Services.AddServiceDiscovery();
 
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            // Turn on resilience by default
             http.AddStandardResilienceHandler();
-
-            // Turn on service discovery by default
             http.AddServiceDiscovery();
         });
 
         builder.Services.AddDistributedMemoryCache();
-
         builder.Services.AddMemoryCache();
         builder.Services.AddHttpContextAccessor();
+
+        builder.AddTenantServices();
+        builder.AddMessagingServices();
+        builder.AddCustomSerilog();
+
+        return builder;
+    }
+
+    private static void AddTenantServices<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
         builder.Services.AddSingleton<ICurrentUser, CurrentUser>();
         builder.Services.AddSingleton<ICurrentTenant, CurrentTenant>();
         builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
@@ -119,7 +83,10 @@ public static class Extensions
         .AddHttpMessageHandler<InternalApiKeyHandler>()
         .AddServiceDiscovery()
         .AddStandardResilienceHandler();
+    }
 
+    private static void AddMessagingServices<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<TenantUpdatedConsumer>();
@@ -135,10 +102,6 @@ public static class Extensions
                 cfg.ConfigureEndpoints(context);
             });
         });
-
-        builder.AddCustomSerilog();
-
-        return builder;
     }
 
     public static WebApplication AddServiceDefaults(this WebApplication app)

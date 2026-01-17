@@ -1,8 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Net;
+using System.Net.Mail;
+using Microsoft.Extensions.Options;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Settings;
-using System.Net;
-using System.Net.Mail;
+using Ona.Core.Common.Exceptions;
 
 namespace Ona.Auth.Infrastructure.Services
 {
@@ -129,7 +130,7 @@ namespace Ona.Auth.Infrastructure.Services
             }
             catch (Exception ex)
             {
-                throw new Exception($"Falha ao enviar email: {ex.Message}");
+                throw new IntegrationException("SMTP", $"Falha ao enviar email para {toEmail}", ex, isTransient: true);
             }
         }
     }

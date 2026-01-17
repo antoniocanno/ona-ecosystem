@@ -63,7 +63,7 @@ namespace Ona.Auth.Application.Services
                 var bytes = Convert.FromBase64String(token);
                 decodedToken = System.Text.Encoding.UTF8.GetString(bytes);
                 var parts = decodedToken.Split(':', 2);
-                if (parts.Length != 2) throw new Exception();
+                if (parts.Length != 2) throw new ValidationException(AuthConstants.Errors.InvalidToken);
                 email = parts[0];
                 actualToken = parts[1];
             }
