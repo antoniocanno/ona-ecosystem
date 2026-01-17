@@ -14,5 +14,6 @@ namespace Ona.Commit.Domain.Interfaces.Repositories
         /// <param name="customerId">ID do Cliente vinculado aos agendamentos.</param>
         /// <returns>Verdadeiro se houver interação recente.</returns>
         Task<bool> HasRecentInteractionAsync(Guid tenantId, Guid customerId);
+        Task<int> CountMessagesSentTodayAsync(Guid tenantId);
     }
 }

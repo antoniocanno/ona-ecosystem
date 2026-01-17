@@ -6,7 +6,8 @@ using System.Text.Json.Serialization;
 namespace Ona.Commit.Infrastructure.Gateways.Evolution
 {
     /// <summary>
-    /// Implementação do gateway de WhatsApp usando a Evolution API
+    /// Cliente HTTP para a Evolution API.
+    /// Utilizado internamente pelo HumanizedWhatsAppGateway.
     /// </summary>
     public class EvolutionWhatsAppGateway : IWhatsAppGateway
     {
@@ -213,9 +214,61 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
             var result = await response.Content.ReadFromJsonAsync<EvolutionSendMessageResponse>();
             return result?.Key?.Id ?? "unknown";
         }
+
+        public async Task SendPresenceAsync(string instanceName, string phoneNumber, string presence = "composing", int delay = 1200)
+        {
+            _logger.LogInformation("Enviando presença {Presence} via instância {InstanceName} para {PhoneNumber}", presence, instanceName, phoneNumber);
+
+            var formattedPhone = phoneNumber.Replace("+", "").Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+
+            var request = new
+            {
+                number = formattedPhone,
+                delay,
+                presence
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"/chat/sendPresence/{instanceName}", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Falha ao enviar presença: {StatusCode} - {Response}", response.StatusCode, error);
+            }
+        }
+
+        public async Task<bool> CheckNumberAsync(string instanceName, string phoneNumber)
+        {
+            _logger.LogInformation("Verificando existência do número {PhoneNumber} via instância {InstanceName}", phoneNumber, instanceName);
+
+            var formattedPhone = phoneNumber.Replace("+", "").Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+
+            var request = new
+            {
+                numbers = new[] { formattedPhone }
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"/chat/whatsappNumbers/{instanceName}", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Falha ao verificar número: {StatusCode} - {Response}", response.StatusCode, error);
+                throw new HttpRequestException($"Falha ao verificar número: {error}");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<List<EvolutionNumberCheckResponse>>();
+            return result?.FirstOrDefault()?.Exists ?? false;
+        }
     }
 
     #region Evolution API Response Models
+
+    internal class EvolutionNumberCheckResponse
+    {
+        [JsonPropertyName("exists")]
+        public bool Exists { get; set; }
+    }
 
     internal class EvolutionCreateInstanceResponse
     {

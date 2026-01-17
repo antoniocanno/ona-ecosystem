@@ -47,5 +47,21 @@ namespace Ona.Commit.Infrastructure.Repositories
                     log.Appointment != null &&
                     log.Appointment.CustomerId == customerId);
         }
+
+        public async Task<int> CountMessagesSentTodayAsync(Guid tenantId)
+        {
+            var today = DateTimeOffset.UtcNow.Date;
+            return await _dbSet.CountAsync(x => x.TenantId == tenantId && x.CreatedAt >= today);
+        }
+    }
+
+    public class WhatsAppNumberVerificationRepository : BaseRepository<CommitDbContext, WhatsAppNumberVerification>, IWhatsAppNumberVerificationRepository
+    {
+        public WhatsAppNumberVerificationRepository(CommitDbContext context) : base(context) { }
+
+        public async Task<WhatsAppNumberVerification?> GetByPhoneNumberAsync(string phoneNumber)
+        {
+            return await _dbSet.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
+        }
     }
 }
