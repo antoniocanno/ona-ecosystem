@@ -3,6 +3,7 @@ using Hangfire.PostgreSql;
 using Ona.Commit.API.Extensions;
 using Ona.Commit.Infrastructure.Data;
 using Ona.Commit.Infrastructure.Extensions;
+using Ona.Commit.Infrastructure.Gateways.Evolution.Consumers;
 using Ona.ServiceDefaults;
 
 namespace Ona.Commit.API
@@ -19,7 +20,11 @@ namespace Ona.Commit.API
                 settings.CommandTimeout = 300;
             });
 
-            builder.AddApiServiceDefaults();
+            builder.AddApiServiceDefaults(
+                configureMassTransit: x =>
+                {
+                    x.AddConsumer<EvolutionEventConsumer>(typeof(EvolutionEventConsumerDefinition));
+                });
 
             // Add services to the container.
 

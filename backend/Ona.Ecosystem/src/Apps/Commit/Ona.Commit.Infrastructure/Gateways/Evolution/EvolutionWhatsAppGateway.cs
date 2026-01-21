@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces.Gateways;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
@@ -22,18 +23,26 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
             _logger = logger;
         }
 
-        public async Task<WhatsAppInstanceResponse> CreateInstanceAsync(Guid tenantId, string instanceName)
+        public async Task<WhatsAppInstanceResponse> CreateInstanceAsync(Guid tenantId, string instanceName, ProxyServer? proxy = null)
         {
-            _logger.LogInformation("Criando instância Evolution API: {InstanceName} para tenant {TenantId}", instanceName, tenantId);
+            _logger.LogInformation("Criando instância Evolution API: {InstanceName} para tenant {TenantId}. Proxy: {Proxy}", instanceName, tenantId, proxy?.Host ?? "Nenhum");
 
             var request = new
             {
                 instanceName,
                 qrcode = true,
-                integration = "WHATSAPP-BAILEYS"
+                integration = "WHATSAPP-BAILEYS",
+                proxyHost = proxy?.Host,
+                proxyPort = proxy?.Port,
+                proxyProtocol = proxy?.Protocol,
+                proxyUsername = proxy?.Username,
+                proxyPassword = proxy?.Password,
             };
 
-            var response = await _httpClient.PostAsJsonAsync("/instance/create", request);
+            var response = await _httpClient.PostAsJsonAsync("/instance/create", request, new System.Text.Json.JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
 
             if (!response.IsSuccessStatusCode)
             {
@@ -259,6 +268,53 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
 
             var result = await response.Content.ReadFromJsonAsync<List<EvolutionNumberCheckResponse>>();
             return result?.FirstOrDefault()?.Exists ?? false;
+        }
+
+        public async Task SetProxyAsync(string instanceName, ProxyServer proxy)
+        {
+            _logger.LogInformation("Definindo proxy para instância {InstanceName}: {Proxy}", instanceName, proxy.Host);
+
+            var request = new
+            {
+                enabled = true,
+                host = proxy.Host,
+                port = proxy.Port,
+                protocol = proxy.Protocol,
+                username = proxy.Username,
+                password = proxy.Password
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"/proxy/set/{instanceName}", request, new System.Text.Json.JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Erro ao definir proxy na Evolution: {StatusCode} - {Response}", response.StatusCode, error);
+                throw new HttpRequestException($"Falha ao configurar proxy: {error}");
+            }
+        }
+
+        public async Task SetRabbitMqConfigAsync(string instanceName)
+        {
+            _logger.LogInformation("Configurando RabbitMQ para instância {InstanceName}", instanceName);
+
+            var request = new
+            {
+                enabled = true,
+                events = new[] { "APPLICATION_STARTUP", "QRCODE_UPDATED", "CONNECTION_UPDATE", "MESSAGES_UPSERT" }
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"/rabbitmq/set/{instanceName}", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogError("Erro ao configurar RabbitMQ na Evolution: {StatusCode} - {Response}", response.StatusCode, error);
+                throw new HttpRequestException($"Falha ao configurar RabbitMQ: {error}");
+            }
         }
     }
 

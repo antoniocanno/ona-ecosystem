@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Ona.Commit.Domain.Entities;
+using Ona.Commit.Domain.Enums;
 using Ona.Commit.Domain.Interfaces.Repositories;
 using Ona.Commit.Infrastructure.Data;
 using Ona.Infrastructure.Shared.Repositories;
@@ -13,6 +14,23 @@ namespace Ona.Commit.Infrastructure.Repositories
         public async Task<TenantWhatsAppConfig?> GetByTenantIdAsync(Guid tenantId)
         {
             return await _dbSet.FirstOrDefaultAsync(x => x.TenantId == tenantId);
+        }
+
+        public async Task<TenantWhatsAppConfig?> GetByInstanceNameAsync(string instanceName)
+        {
+            return await _dbSet.FirstOrDefaultAsync(x => x.InstanceName == instanceName);
+        }
+
+        public async Task<TenantWhatsAppConfig> GetOrCreateByTenantIdAsync(Guid tenantId)
+        {
+            var config = await GetByTenantIdAsync(tenantId);
+            if (config == null)
+            {
+                config = new TenantWhatsAppConfig(tenantId, WhatsAppProvider.None);
+                await CreateAsync(config);
+                await SaveChangesAsync();
+            }
+            return config;
         }
     }
 
@@ -62,6 +80,27 @@ namespace Ona.Commit.Infrastructure.Repositories
         public async Task<WhatsAppNumberVerification?> GetByPhoneNumberAsync(string phoneNumber)
         {
             return await _dbSet.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
+        }
+    }
+
+    public class ProxyServerRepository : BaseRepository<CommitDbContext, ProxyServer>, IProxyServerRepository
+    {
+        public ProxyServerRepository(CommitDbContext context) : base(context) { }
+
+        public async Task<ProxyServer?> GetAvailableProxyAsync()
+        {
+            return await _dbSet
+                .Include(p => p.Tenants)
+                .Where(p => p.IsActive)
+                .OrderBy(p => p.Tenants.Count)
+                .FirstOrDefaultAsync(p => p.Tenants.Count < p.MaxTenants);
+        }
+
+        public async Task<ProxyServer?> GetByTenantIdAsync(Guid tenantId)
+        {
+            return await _dbSet
+                .Include(p => p.Tenants)
+                .FirstOrDefaultAsync(p => p.Tenants.Any(t => t.TenantId == tenantId));
         }
     }
 }

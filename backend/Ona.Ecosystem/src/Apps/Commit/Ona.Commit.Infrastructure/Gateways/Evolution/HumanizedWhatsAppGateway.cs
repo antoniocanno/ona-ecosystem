@@ -30,8 +30,8 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
             _logRepository = logRepository;
         }
 
-        public Task<WhatsAppInstanceResponse> CreateInstanceAsync(Guid tenantId, string instanceName)
-            => _client.CreateInstanceAsync(tenantId, instanceName);
+        public Task<WhatsAppInstanceResponse> CreateInstanceAsync(Guid tenantId, string instanceName, ProxyServer? proxy = null)
+            => _client.CreateInstanceAsync(tenantId, instanceName, proxy);
 
         public Task<WhatsAppQrCodeResponse> GetQrCodeAsync(string instanceName)
             => _client.GetQrCodeAsync(instanceName);
@@ -77,6 +77,12 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
                 return await client.SendButtonsMessageAsync(instanceName, phoneNumber, title, description, footer, buttons);
             });
         }
+
+        public Task SetProxyAsync(string instanceName, ProxyServer proxy)
+            => _client.SetProxyAsync(instanceName, proxy);
+
+        public Task SetRabbitMqConfigAsync(string instanceName)
+            => _client.SetRabbitMqConfigAsync(instanceName);
 
         private async Task ValidateNumberAsync(string instanceName, string phoneNumber, EvolutionWhatsAppGateway client)
         {

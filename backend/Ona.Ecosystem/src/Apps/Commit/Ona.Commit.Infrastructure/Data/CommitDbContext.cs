@@ -18,6 +18,7 @@ namespace Ona.Commit.Infrastructure.Data
         public DbSet<TenantWhatsAppConfig> TenantWhatsAppConfigs { get; set; } = null!;
         public DbSet<WhatsAppTemplateRegistry> WhatsAppTemplateRegistries { get; set; } = null!;
         public DbSet<MessageInteractionLog> MessageInteractionLogs { get; set; } = null!;
+        public DbSet<ProxyServer> ProxyServers { get; set; } = null!;
 
         public CommitDbContext() : base() { }
 
@@ -42,6 +43,7 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureTenantWhatsAppConfigEntity(modelBuilder);
             ConfigureWhatsAppTemplateRegistryEntity(modelBuilder);
             ConfigureMessageInteractionLogEntity(modelBuilder);
+            ConfigureProxyServerEntity(modelBuilder);
 
             modelBuilder.ApplyTenantFilters(_currentTenant);
         }
@@ -58,6 +60,7 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<TenantWhatsAppConfig>().ToTable("TenantWhatsAppConfigs");
             modelBuilder.Entity<WhatsAppTemplateRegistry>().ToTable("WhatsAppTemplateRegistries");
             modelBuilder.Entity<MessageInteractionLog>().ToTable("MessageInteractionLogs");
+            modelBuilder.Entity<ProxyServer>().ToTable("ProxyServers");
         }
 
         private static void ConfigureCustomerEntity(ModelBuilder modelBuilder)
@@ -136,7 +139,7 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<TenantWhatsAppConfig>(entity =>
             {
                 entity.HasKey(t => t.Id);
-                entity.HasIndex(t => t.TenantId).IsUnique();
+                entity.HasIndex(t => new { t.TenantId, t.InstanceName }).IsUnique();
             });
         }
 
@@ -165,6 +168,18 @@ namespace Ona.Commit.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(m => m.AppointmentId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+        }
+
+        private static void ConfigureProxyServerEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ProxyServer>(entity =>
+            {
+                entity.HasKey(p => p.Id);
+                entity.HasMany(p => p.Tenants)
+                    .WithOne(t => t.ProxyServer)
+                    .HasForeignKey(t => t.ProxyServerId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
         }
 

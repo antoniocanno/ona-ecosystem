@@ -18,7 +18,7 @@ namespace Ona.Commit.Infrastructure.MultiTenancy
             _logger = logger;
         }
 
-        public async Task<TenantContext> GetAsync(Guid tenantId)
+        public async Task<TenantContext?> GetAsync(Guid tenantId)
         {
             return await _cache.GetOrCreateAsync($"tenant:{tenantId}", async entry =>
             {
@@ -32,6 +32,11 @@ namespace Ona.Commit.Infrastructure.MultiTenancy
 
                     if (!response.IsSuccessStatusCode)
                     {
+                        if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                        {
+                            return null;
+                        }
+
                         _logger.LogError("Failed to get tenant context for {TenantId}. Status: {Status}", tenantId, response.StatusCode);
                         throw new InvalidOperationException($"Could not retrieve tenant context for {tenantId}");
                     }
@@ -39,7 +44,7 @@ namespace Ona.Commit.Infrastructure.MultiTenancy
                     var context = await response.Content.ReadFromJsonAsync<TenantContext>();
 
                     if (context == null)
-                        throw new InvalidOperationException($"Tenant context null for {tenantId}");
+                        return null;
 
                     return context;
                 }
@@ -49,7 +54,7 @@ namespace Ona.Commit.Infrastructure.MultiTenancy
                     throw;
                 }
 
-            }) ?? throw new InvalidOperationException("Could not retrieve tenant context");
+            });
         }
 
         public void Invalidate(Guid tenantId)

@@ -1,3 +1,5 @@
+using Ona.Commit.Domain.Entities;
+
 namespace Ona.Commit.Domain.Interfaces.Gateways
 {
     /// <summary>
@@ -10,8 +12,9 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         /// </summary>
         /// <param name="tenantId">ID do Tenant</param>
         /// <param name="instanceName">Nome da instância (geralmente o nome do tenant ou ID único)</param>
+        /// <param name="proxy">Proxy opcional para a instância</param>
         /// <returns>Retorna informações sobre a instância criada, incluindo o QR Code se aplicável</returns>
-        Task<WhatsAppInstanceResponse> CreateInstanceAsync(Guid tenantId, string instanceName);
+        Task<WhatsAppInstanceResponse> CreateInstanceAsync(Guid tenantId, string instanceName, ProxyServer? proxy = null);
 
         /// <summary>
         /// Obtém o QR Code para conectar uma instância do WhatsApp
@@ -59,6 +62,19 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         /// <param name="buttons">Lista de botões</param>
         /// <returns>ID da mensagem enviada</returns>
         Task<string> SendButtonsMessageAsync(string instanceName, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons);
+
+        /// <summary>
+        /// Atualiza as configurações de proxy de uma instância existente.
+        /// </summary>
+        /// <param name="instanceName">Nome da instância</param>
+        /// <param name="proxy">Configurações de proxy</param>
+        Task SetProxyAsync(string instanceName, ProxyServer proxy);
+
+        /// <summary>
+        /// Configura a integração com RabbitMQ para uma instância existente.
+        /// </summary>
+        /// <param name="instanceName">Nome da instância</param>
+        Task SetRabbitMqConfigAsync(string instanceName);
     }
 }
 

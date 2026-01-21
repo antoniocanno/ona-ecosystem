@@ -1,9 +1,9 @@
-﻿using System.Net;
-using System.Net.Mail;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Settings;
 using Ona.Core.Common.Exceptions;
+using System.Net;
+using System.Net.Mail;
 
 namespace Ona.Auth.Infrastructure.Services
 {

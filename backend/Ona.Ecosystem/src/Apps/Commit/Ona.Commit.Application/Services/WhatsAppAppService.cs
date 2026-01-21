@@ -1,19 +1,27 @@
 using Microsoft.Extensions.Logging;
 using Ona.Commit.Application.Interfaces.Services;
+using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Interfaces.Gateways;
+using Ona.Commit.Domain.Interfaces.Repositories;
 
 namespace Ona.Commit.Application.Services;
 
 public class WhatsAppAppService : IWhatsAppAppService
 {
     private readonly IWhatsAppGateway _whatsAppGateway;
+    private readonly IProxyResourceManager _proxyResourceManager;
+    private readonly ITenantWhatsAppConfigRepository _configRepository;
     private readonly ILogger<WhatsAppAppService> _logger;
 
     public WhatsAppAppService(
         IWhatsAppGateway whatsAppGateway,
+        IProxyResourceManager proxyResourceManager,
+        ITenantWhatsAppConfigRepository configRepository,
         ILogger<WhatsAppAppService> logger)
     {
         _whatsAppGateway = whatsAppGateway;
+        _proxyResourceManager = proxyResourceManager;
+        _configRepository = configRepository;
         _logger = logger;
     }
 
@@ -21,61 +29,65 @@ public class WhatsAppAppService : IWhatsAppAppService
     {
         var instanceName = $"tenant_{tenantId:N}";
 
-        WhatsAppConnectionStatus? status = null;
-        bool instanceExists = false;
-
         try
         {
-            status = await _whatsAppGateway.GetConnectionStatusAsync(instanceName);
+            var status = await _whatsAppGateway.GetConnectionStatusAsync(instanceName);
 
-            if (status.State != "not_found")
-                instanceExists = true;
-            else
-                instanceExists = false;
-        }
-        catch (Exception)
-        {
-            _logger.LogError("Erro ao buscar status da instância {InstanceName}", instanceName);
-            throw;
-        }
-
-        if (instanceExists && status != null && status.IsConnected)
-        {
-            return new WhatsAppInstanceResponse
+            if (status.State != "not_found" && status.IsConnected)
             {
-                InstanceName = instanceName,
-                Status = "connected",
-                QrCodeBase64 = null
-            };
-        }
+                return new WhatsAppInstanceResponse
+                {
+                    InstanceName = instanceName,
+                    Status = "connected",
+                    QrCodeBase64 = null
+                };
+            }
 
-        if (!instanceExists)
-        {
+            if (status.State == "not_found")
+            {
+                ProxyServer? proxy = null;
+                try
+                {
+                    proxy = await _proxyResourceManager.AllocateProxyAsync(tenantId);
+                    await _whatsAppGateway.CreateInstanceAsync(tenantId, instanceName, proxy);
+
+                    var config = await _configRepository.GetOrCreateByTenantIdAsync(tenantId);
+                    config.UpdateEvolutionCredentials(instanceName, null);
+                    await _configRepository.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Falha ao criar instância Evolution para {InstanceName}. Liberando recursos...", instanceName);
+
+                    if (proxy != null)
+                    {
+                        await _proxyResourceManager.ReleaseProxyAsync(tenantId);
+                    }
+
+                    throw;
+                }
+            }
+
             try
             {
-                await _whatsAppGateway.CreateInstanceAsync(tenantId, instanceName);
+                var qrCodeResponse = await _whatsAppGateway.GetQrCodeAsync(instanceName);
+
+                return new WhatsAppInstanceResponse
+                {
+                    InstanceName = instanceName,
+                    Status = qrCodeResponse.Status,
+                    QrCodeBase64 = qrCodeResponse.QrCodeBase64
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao criar instância {InstanceName}", instanceName);
+                _logger.LogError(ex, "Erro ao buscar QR Code para {InstanceName}", instanceName);
                 throw;
             }
         }
-
-        try
-        {
-            var qrCodeResponse = await _whatsAppGateway.GetQrCodeAsync(instanceName);
-
-            return new WhatsAppInstanceResponse
-            {
-                InstanceName = instanceName,
-                Status = qrCodeResponse.Status,
-                QrCodeBase64 = qrCodeResponse.QrCodeBase64
-            };
-        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao buscar QR Code para {InstanceName}", instanceName);
+            _logger.LogError(ex, "Erro geral no processamento de conexão para {InstanceName}", instanceName);
             throw;
         }
     }

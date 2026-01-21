@@ -15,7 +15,7 @@ namespace Ona.Auth.Application.Services
             _tenantService = tenantService;
         }
 
-        public async Task<TenantContext> GetAsync(Guid tenantId)
+        public async Task<TenantContext?> GetAsync(Guid tenantId)
         {
             return await _cache.GetOrCreateAsync($"tenant:{tenantId}", async entry =>
             {
@@ -23,15 +23,18 @@ namespace Ona.Auth.Application.Services
 
                 var dto = await _tenantService.GetByIdAsync(tenantId);
 
+                if (dto == null)
+                    return null;
+
                 return new TenantContext
                 {
-                    TenantId = dto!.Id,
+                    TenantId = dto.Id,
                     Name = dto.Name,
                     Domain = dto.Domain,
                     TimeZone = dto.TimeZone,
                     WhatsAppApiKey = dto.WhatsAppApiKey
                 };
-            }) ?? throw new InvalidOperationException("Não foi possível recuperar o contexto do cliente");
+            });
         }
 
         public void Invalidate(Guid tenantId)

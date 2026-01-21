@@ -1,11 +1,11 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
 using Ona.Commit.Domain.Enums;
 using Ona.Commit.Domain.Interfaces.Repositories;
 using Ona.Core.Tenant;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Ona.Commit.Infrastructure.Integrations
 {

@@ -8,7 +8,8 @@ public static class EvolutionApiExtensions
         this IDistributedApplicationBuilder builder,
         IResourceBuilder<IResourceWithConnectionString> postgres,
         IResourceBuilder<ParameterResource> pgPassword,
-        IResourceBuilder<RedisResource> redis)
+        IResourceBuilder<RedisResource> redis,
+        IResourceBuilder<RabbitMQServerResource> rabbitMq)
     {
         // --- Parâmetros ---
         var evolutionApiKey = builder.AddParameter("Evolution-ApiKey", secret: true);
@@ -29,12 +30,18 @@ public static class EvolutionApiExtensions
         var evolutionCacheRedisSaveInstances = builder.AddParameter("Evolution-CacheRedisSaveInstances");
         var evolutionCacheLocalEnabled = builder.AddParameter("Evolution-CacheLocalEnabled");
 
+        // RabbitMQ Parâmetros
+        var rabbitMqEnabled = builder.AddParameter("RabbitMq-Enabled");
+        var rabbitMqGlobalEnabled = builder.AddParameter("RabbitMq-GlobalEnabled");
+        var rabbitMqExchange = builder.AddParameter("RabbitMq-ExchangeName");
+        var rabbitMqEventsConnectionUpdate = builder.AddParameter("RabbitMq-Events-ConnectionUpdate");
+
         // --- URIs de Conexão ---
         var evolutionPostgresUri = ReferenceExpression.Create(
             $"postgresql://postgres:{pgPassword}@postgres:5432/evolution-db?schema=public");
 
         // --- Container da Evolution API ---
-        var container = builder.AddContainer("evolution-api", "atendai/evolution-api")
+        var container = builder.AddContainer("evolution-api", "atendai/evolution-api:v2.2.3")
             .WithEnvironment("AUTHENTICATION_TYPE", "apikey")
             .WithEnvironment("AUTHENTICATION_API_KEY", evolutionApiKey)
             .WithEnvironment("SERVER_URL", evolutionApiUrl)
@@ -65,12 +72,21 @@ public static class EvolutionApiExtensions
             .WithEnvironment("DATABASE_SAVE_DATA_HISTORIC", evolutionSaveHistoric)
 
             .WithEnvironment("CONFIG_SESSION_PHONE_VERSION", "2.3000.1031952138")
-            .WithEnvironment("CONFIG_SESSION_PHONE_CLIENT", "Commit")
+            .WithEnvironment("CONFIG_SESSION_PHONE_CLIENT", "Ona System")
             .WithEnvironment("CONFIG_SESSION_PHONE_NAME", "Chrome")
 
+            // Configuração RabbitMQ
+            .WithEnvironment("RABBITMQ_ENABLED", rabbitMqEnabled)
+            .WithEnvironment("RABBITMQ_URI", ReferenceExpression.Create($"amqp://{rabbitMq.Resource.Name}:5672"))
+            .WithEnvironment("RABBITMQ_EXCHANGE_NAME", rabbitMqExchange)
+            .WithEnvironment("RABBITMQ_GLOBAL_ENABLED", rabbitMqGlobalEnabled)
+            .WithEnvironment("RABBITMQ_EVENTS_CONNECTION_UPDATE", rabbitMqEventsConnectionUpdate)
+
             .WithHttpEndpoint(targetPort: 8080, name: "api")
+            .WithReference(rabbitMq)
             .WaitFor(postgres)
-            .WaitFor(redis);
+            .WaitFor(redis)
+            .WaitFor(rabbitMq);
 
         return new EvolutionApiResource(container, evolutionApiKey);
     }

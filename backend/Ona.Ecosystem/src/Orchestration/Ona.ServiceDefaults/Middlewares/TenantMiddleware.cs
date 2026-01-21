@@ -26,14 +26,21 @@ namespace Ona.ServiceDefaults.Middlewares
                     context.Items["TenantId"] = tenantId;
 
                     var endpoint = context.GetEndpoint();
-                    if (endpoint?.Metadata?.GetMetadata<SkipTenantValidationAttribute>() != null)
+                    if (endpoint?.Metadata.GetMetadata<SkipTenantValidationAttribute>() != null)
                     {
                         await _next(context);
                         return;
                     }
 
-                    var tenantContext = await tenantProvider.GetAsync(tenantId);
-                    accessor.SetCurrent(tenantContext);
+                    try
+                    {
+                        var tenantContext = await tenantProvider.GetAsync(tenantId);
+                        if (tenantContext != null)
+                        {
+                            accessor.SetCurrent(tenantContext);
+                        }
+                    }
+                    catch (Exception) { }
                 }
             }
 

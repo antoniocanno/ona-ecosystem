@@ -26,11 +26,14 @@ public static class Extensions
     private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
 
-    public static TBuilder AddApiServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    public static TBuilder AddApiServiceDefaults<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
     {
         builder.ConfigureOpenTelemetry();
 
-        builder.AddCommonServiceDefaults();
+        builder.AddCommonServiceDefaults(configureMassTransit, configureRabbitMq);
 
         builder.Services.AddSwaggerDocumentation();
         builder.Services.AddJwtAuthentication(builder.Configuration);
@@ -40,12 +43,18 @@ public static class Extensions
         return builder;
     }
 
-    public static TBuilder AddWorkerServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    public static TBuilder AddWorkerServiceDefaults<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
     {
-        return builder.AddCommonServiceDefaults();
+        return builder.AddCommonServiceDefaults(configureMassTransit, configureRabbitMq);
     }
 
-    private static TBuilder AddCommonServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    private static TBuilder AddCommonServiceDefaults<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
     {
         builder.AddDefaultHealthChecks();
 
@@ -62,7 +71,7 @@ public static class Extensions
         builder.Services.AddHttpContextAccessor();
 
         builder.AddTenantServices();
-        builder.AddMessagingServices();
+        builder.AddMessagingServices(configureMassTransit, configureRabbitMq);
         builder.AddCustomSerilog();
 
         return builder;
@@ -85,11 +94,16 @@ public static class Extensions
         .AddStandardResilienceHandler();
     }
 
-    private static void AddMessagingServices<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    private static void AddMessagingServices<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
     {
         builder.Services.AddMassTransit(x =>
         {
             x.AddConsumer<TenantUpdatedConsumer>();
+
+            configureMassTransit?.Invoke(x);
 
             x.UsingRabbitMq((context, cfg) =>
             {
@@ -98,6 +112,8 @@ public static class Extensions
                 {
                     cfg.Host(connectionString);
                 }
+
+                configureRabbitMq?.Invoke(context, cfg);
 
                 cfg.ConfigureEndpoints(context);
             });
