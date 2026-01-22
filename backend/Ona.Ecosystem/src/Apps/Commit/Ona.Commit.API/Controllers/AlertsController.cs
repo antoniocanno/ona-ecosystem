@@ -1,30 +1,36 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Ona.Commit.Application.Interfaces.Services;
+using Ona.Core.Common.Enums;
+using Ona.ServiceDefaults.Attributes;
 
 namespace Ona.Commit.API.Controllers
 {
+    [Route("api/[controller]")]
     [ApiController]
-    [Route("api/alerts")]
+    [Authorize]
     public class AlertsController : ControllerBase
     {
-        private readonly IAlertAppService _alertAppService;
+        private readonly IAlertAppService _alertService;
 
-        public AlertsController(IAlertAppService alertAppService)
+        public AlertsController(IAlertAppService alertService)
         {
-            _alertAppService = alertAppService;
+            _alertService = alertService;
         }
 
         [HttpGet("unread")]
+        [AuthorizeRoles(Role.Operator)]
         public async Task<IActionResult> GetUnread()
         {
-            var alerts = await _alertAppService.GetUnreadAsync();
+            var alerts = await _alertService.GetUnreadAsync();
             return Ok(alerts);
         }
 
-        [HttpPut("{id}/read")]
+        [HttpPost("{id:guid}/read")]
+        [AuthorizeRoles(Role.Operator)]
         public async Task<IActionResult> MarkAsRead(Guid id)
         {
-            await _alertAppService.MarkAsReadAsync(id);
+            await _alertService.MarkAsReadAsync(id);
             return NoContent();
         }
     }

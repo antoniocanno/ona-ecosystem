@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
+﻿using Hangfire;
+using Microsoft.Extensions.Caching.Distributed;
 using Ona.Commit.Application.DTOs.Requests;
 using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Repositories;
@@ -17,20 +18,17 @@ namespace Ona.Commit.Application.Services
     {
         private readonly ICurrentUser _currentUser;
         private readonly IAppointmentRepository _repository;
-        private readonly ICalendarService _calendarService;
         private readonly IDistributedCache _cache;
         private readonly IDomainEventDispatcher _eventDispatcher;
 
         public AppointmentAppService(
             ICurrentUser currentUser,
             IAppointmentRepository repository,
-            ICalendarService calendarService,
             IDistributedCache cache,
             IDomainEventDispatcher eventDispatcher)
         {
             _currentUser = currentUser;
             _repository = repository;
-            _calendarService = calendarService;
             _cache = cache;
             _eventDispatcher = eventDispatcher;
         }
@@ -85,7 +83,7 @@ namespace Ona.Commit.Application.Services
             appointment = await _repository.CreateAsync(appointment);
             await _repository.SaveChangesAsync();
 
-            await _calendarService.CreateAppointmentEventAsync(appointment, request.ExternalEventId, request.Provider);
+            BackgroundJob.Enqueue<ICalendarService>(x => x.CreateAppointmentEventAsync(appointment, request.ExternalEventId, request.Provider));
 
             return appointment;
         }
@@ -113,11 +111,10 @@ namespace Ona.Commit.Application.Services
 
             await _repository.SaveChangesAsync();
 
-            // TODO: mover para job em background se o sistema for escalado
-            var syncTasks = appointments.Select(pair =>
-                _calendarService.CreateAppointmentEventAsync(pair.entity, pair.request.ExternalEventId, pair.request.Provider));
-
-            await Task.WhenAll(syncTasks);
+            foreach (var pair in appointments)
+            {
+                BackgroundJob.Enqueue<ICalendarService>(x => x.CreateAppointmentEventAsync(pair.entity, pair.request.ExternalEventId, pair.request.Provider));
+            }
 
             return appointments.Select(pair => (AppointmentDto)pair.entity);
         }
@@ -146,7 +143,7 @@ namespace Ona.Commit.Application.Services
             await _repository.SaveChangesAsync();
             await _cache.RemoveAsync($"appointment:{id}");
 
-            await _calendarService.UpdateAppointmentEventAsync(appointment);
+            BackgroundJob.Enqueue<ICalendarService>(x => x.UpdateAppointmentEventAsync(appointment));
 
             return appointment;
         }
@@ -163,7 +160,7 @@ namespace Ona.Commit.Application.Services
             await _repository.SaveChangesAsync();
             await _cache.RemoveAsync($"appointment:{id}");
 
-            await _calendarService.DeleteAppointmentEventAsync(appointment);
+            BackgroundJob.Enqueue<ICalendarService>(x => x.DeleteAppointmentEventAsync(appointment));
         }
 
         public async Task ConfirmAsync(Guid id)
@@ -178,7 +175,7 @@ namespace Ona.Commit.Application.Services
             await _repository.SaveChangesAsync();
             await _cache.RemoveAsync($"appointment:{id}");
 
-            await _calendarService.UpdateAppointmentEventAsync(appointment);
+            BackgroundJob.Enqueue<ICalendarService>(x => x.UpdateAppointmentEventAsync(appointment));
         }
 
         public async Task CancelAsync(Guid id)
@@ -192,8 +189,6 @@ namespace Ona.Commit.Application.Services
             _repository.Update(appointment);
             await _repository.SaveChangesAsync();
             await _cache.RemoveAsync($"appointment:{id}");
-
-            await _calendarService.DeleteAppointmentEventAsync(appointment);
 
             await _eventDispatcher.DispatchAsync(new AppointmentCancelledByPatientEvent(appointment));
         }
