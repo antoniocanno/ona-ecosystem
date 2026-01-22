@@ -30,10 +30,5 @@ public interface IWhatsAppAppService
     /// <summary>
     /// Envia uma mensagem de teste
     /// </summary>
-    Task<string> SendTestMessageAsync(Guid tenantId, string phoneNumber, string message);
-
-    /// <summary>
-    /// Envia uma mensagem com botões interativos
-    /// </summary>
-    Task<string> SendButtonsMessageAsync(Guid tenantId, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons);
+    Task<string> SendTextMessageAsync(Guid tenantId, string phoneNumber, string message);
 }

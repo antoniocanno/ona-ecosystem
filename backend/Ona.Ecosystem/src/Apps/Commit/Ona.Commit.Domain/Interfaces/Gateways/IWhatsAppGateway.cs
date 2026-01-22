@@ -51,17 +51,6 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         /// <param name="message">Mensagem a ser enviada</param>
         /// <returns>ID da mensagem enviada</returns>
         Task<string> SendTextMessageAsync(string instanceName, string phoneNumber, string message);
-        /// <summary>
-        /// Envia uma mensagem com botões interativos via WhatsApp
-        /// </summary>
-        /// <param name="instanceName">Nome da instância</param>
-        /// <param name="phoneNumber">Número de telefone do destinatário</param>
-        /// <param name="title">Título da mensagem</param>
-        /// <param name="description">Descrição/Corpo da mensagem</param>
-        /// <param name="footer">Rodapé da mensagem</param>
-        /// <param name="buttons">Lista de botões</param>
-        /// <returns>ID da mensagem enviada</returns>
-        Task<string> SendButtonsMessageAsync(string instanceName, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons);
 
         /// <summary>
         /// Atualiza as configurações de proxy de uma instância existente.

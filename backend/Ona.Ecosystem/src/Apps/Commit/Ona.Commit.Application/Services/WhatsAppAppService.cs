@@ -107,24 +107,12 @@ public class WhatsAppAppService : IWhatsAppAppService
         await _whatsAppGateway.DeleteInstanceAsync($"tenant_{tenantId:N}");
     }
 
-    public async Task<string> SendTestMessageAsync(Guid tenantId, string phoneNumber, string message)
+    public async Task<string> SendTextMessageAsync(Guid tenantId, string phoneNumber, string message)
     {
         return await _whatsAppGateway.SendTextMessageAsync(
             $"tenant_{tenantId:N}",
             phoneNumber,
             message
-        );
-    }
-
-    public async Task<string> SendButtonsMessageAsync(Guid tenantId, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons)
-    {
-        return await _whatsAppGateway.SendButtonsMessageAsync(
-            $"tenant_{tenantId:N}",
-            phoneNumber,
-            title,
-            description,
-            footer,
-            buttons
         );
     }
 }

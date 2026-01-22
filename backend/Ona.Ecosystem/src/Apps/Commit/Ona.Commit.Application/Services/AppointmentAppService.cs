@@ -4,6 +4,9 @@ using Ona.Commit.Application.DTOs.Responses;
 using Ona.Commit.Application.Interfaces.Repositories;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
+using Ona.Commit.Domain.Enums;
+using Ona.Commit.Domain.Events;
+using Ona.Core.Common.Events;
 using Ona.Core.Common.Exceptions;
 using Ona.Core.Interfaces;
 using System.Text.Json;
@@ -16,22 +19,25 @@ namespace Ona.Commit.Application.Services
         private readonly IAppointmentRepository _repository;
         private readonly ICalendarService _calendarService;
         private readonly IDistributedCache _cache;
+        private readonly IDomainEventDispatcher _eventDispatcher;
 
         public AppointmentAppService(
             ICurrentUser currentUser,
             IAppointmentRepository repository,
             ICalendarService calendarService,
-            IDistributedCache cache)
+            IDistributedCache cache,
+            IDomainEventDispatcher eventDispatcher)
         {
             _currentUser = currentUser;
             _repository = repository;
             _calendarService = calendarService;
             _cache = cache;
+            _eventDispatcher = eventDispatcher;
         }
 
         public async Task<IEnumerable<AppointmentDto>> ListAsync()
         {
-            var appointments = await _repository.GetAllAsync(a => a.Customer);
+            var appointments = await _repository.GetAllAsync(a => a.Customer!);
             return appointments.Select(a => (AppointmentDto)a);
         }
 
@@ -49,7 +55,7 @@ namespace Ona.Commit.Application.Services
                 return JsonSerializer.Deserialize<AppointmentDto>(cached);
             }
 
-            var entity = await _repository.GetByIdAsync(id, a => a.Customer);
+            var entity = await _repository.GetByIdAsync(id, a => a.Customer!);
 
             if (entity == null)
                 throw new NotFoundException("Agendamento não encontrado.");
@@ -181,13 +187,15 @@ namespace Ona.Commit.Application.Services
             if (appointment == null)
                 throw new NotFoundException("Agendamento não encontrado.");
 
-            appointment.UpdateStatus(Ona.Commit.Domain.Enums.AppointmentStatus.Canceled);
+            appointment.UpdateStatus(AppointmentStatus.Canceled);
 
             _repository.Update(appointment);
             await _repository.SaveChangesAsync();
             await _cache.RemoveAsync($"appointment:{id}");
 
             await _calendarService.DeleteAppointmentEventAsync(appointment);
+
+            await _eventDispatcher.DispatchAsync(new AppointmentCancelledByPatientEvent(appointment));
         }
     }
 }

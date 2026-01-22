@@ -35,6 +35,7 @@ public static class EvolutionApiExtensions
         var rabbitMqGlobalEnabled = builder.AddParameter("RabbitMq-GlobalEnabled");
         var rabbitMqExchange = builder.AddParameter("RabbitMq-ExchangeName");
         var rabbitMqEventsConnectionUpdate = builder.AddParameter("RabbitMq-Events-ConnectionUpdate");
+        var rabbitMqEventsMessagesUpsert = builder.AddParameter("RabbitMq-Events-MessagesUpsert");
 
         // --- URIs de Conexão ---
         var evolutionPostgresUri = ReferenceExpression.Create(
@@ -81,6 +82,7 @@ public static class EvolutionApiExtensions
             .WithEnvironment("RABBITMQ_EXCHANGE_NAME", rabbitMqExchange)
             .WithEnvironment("RABBITMQ_GLOBAL_ENABLED", rabbitMqGlobalEnabled)
             .WithEnvironment("RABBITMQ_EVENTS_CONNECTION_UPDATE", rabbitMqEventsConnectionUpdate)
+            .WithEnvironment("RABBITMQ_EVENTS_MESSAGES_UPSERT", rabbitMqEventsMessagesUpsert)
 
             .WithHttpEndpoint(targetPort: 8080, name: "api")
             .WithReference(rabbitMq)

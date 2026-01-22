@@ -19,6 +19,7 @@ namespace Ona.Commit.Infrastructure.Data
         public DbSet<WhatsAppTemplateRegistry> WhatsAppTemplateRegistries { get; set; } = null!;
         public DbSet<MessageInteractionLog> MessageInteractionLogs { get; set; } = null!;
         public DbSet<ProxyServer> ProxyServers { get; set; } = null!;
+        public DbSet<OperatorAlert> OperatorAlerts { get; set; } = null!;
 
         public CommitDbContext() : base() { }
 
@@ -44,6 +45,7 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureWhatsAppTemplateRegistryEntity(modelBuilder);
             ConfigureMessageInteractionLogEntity(modelBuilder);
             ConfigureProxyServerEntity(modelBuilder);
+            ConfigureOperatorAlertEntity(modelBuilder);
 
             modelBuilder.ApplyTenantFilters(_currentTenant);
         }
@@ -61,6 +63,7 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<WhatsAppTemplateRegistry>().ToTable("WhatsAppTemplateRegistries");
             modelBuilder.Entity<MessageInteractionLog>().ToTable("MessageInteractionLogs");
             modelBuilder.Entity<ProxyServer>().ToTable("ProxyServers");
+            modelBuilder.Entity<OperatorAlert>().ToTable("OperatorAlerts");
         }
 
         private static void ConfigureCustomerEntity(ModelBuilder modelBuilder)
@@ -179,6 +182,19 @@ namespace Ona.Commit.Infrastructure.Data
                 entity.HasMany(p => p.Tenants)
                     .WithOne(t => t.ProxyServer)
                     .HasForeignKey(t => t.ProxyServerId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+        }
+
+        private static void ConfigureOperatorAlertEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<OperatorAlert>(entity =>
+            {
+                entity.HasKey(o => o.Id);
+                entity.HasIndex(o => new { o.TenantId, o.IsRead });
+                entity.HasOne(o => o.RelatedAppointment)
+                    .WithMany()
+                    .HasForeignKey(o => o.RelatedAppointmentId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
         }

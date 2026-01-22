@@ -62,22 +62,6 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
             });
         }
 
-        public Task<string> SendButtonsMessageAsync(string instanceName, string phoneNumber, string title, string description, string footer, List<WhatsAppButton> buttons)
-        {
-            return _dispatcher.EnqueueAsync(instanceName, async (client) =>
-            {
-                await ValidateWarmUpLimitAsync(instanceName);
-                await ValidateNumberAsync(instanceName, phoneNumber, client);
-
-                var typingDuration = new Random().Next(2000, 4500);
-
-                await client.SendPresenceAsync(instanceName, phoneNumber, "composing", typingDuration);
-                await Task.Delay(typingDuration);
-
-                return await client.SendButtonsMessageAsync(instanceName, phoneNumber, title, description, footer, buttons);
-            });
-        }
-
         public Task SetProxyAsync(string instanceName, ProxyServer proxy)
             => _client.SetProxyAsync(instanceName, proxy);
 

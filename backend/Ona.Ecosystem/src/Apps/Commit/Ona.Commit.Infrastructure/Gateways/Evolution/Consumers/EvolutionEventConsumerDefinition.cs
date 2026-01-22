@@ -11,21 +11,20 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution.Consumers
 
         protected override void ConfigureConsumer(IReceiveEndpointConfigurator endpointConfigurator, IConsumerConfigurator<EvolutionEventConsumer> consumerConfigurator, IRegistrationContext context)
         {
-            if (endpointConfigurator is IRabbitMqReceiveEndpointConfigurator rabbit)
+            if (endpointConfigurator is not IRabbitMqReceiveEndpointConfigurator rabbit) return;
+
+            rabbit.Durable = true;
+            rabbit.AutoDelete = false;
+
+            rabbit.ConfigureConsumeTopology = false;
+            rabbit.ClearSerialization();
+            rabbit.UseRawJsonSerializer();
+
+            rabbit.Bind("evolution_exchange", s =>
             {
-                rabbit.Durable = true;
-                rabbit.AutoDelete = false;
-
-                rabbit.ConfigureConsumeTopology = false;
-                rabbit.ClearSerialization();
-                rabbit.UseRawJsonSerializer();
-
-                rabbit.Bind("evolution_exchange", s =>
-                {
-                    s.ExchangeType = "topic";
-                    s.RoutingKey = "#";
-                });
-            }
+                s.ExchangeType = "topic";
+                s.RoutingKey = "#";
+            });
         }
     }
 }

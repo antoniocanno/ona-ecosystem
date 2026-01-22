@@ -16,6 +16,7 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution.Consumers
         private readonly IWhatsAppGateway _whatsAppGateway;
 
         private const string ConnectionUpdate = "connection.update";
+        private const string MessagesUpsert = "messages.upsert";
 
         public EvolutionEventConsumer(
             ILogger<EvolutionEventConsumer> logger,
@@ -37,6 +38,10 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution.Consumers
             if (evento.Event == ConnectionUpdate)
             {
                 await HandleConnectionUpdateAsync(evento);
+            }
+            else if (evento.Event == MessagesUpsert)
+            {
+                await HandleMessagesUpsertAsync(evento);
             }
         }
 
@@ -69,7 +74,7 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution.Consumers
                             }
                         }
 
-                        if (config != null && config.ProxyServerId.HasValue)
+                        if (config?.ProxyServerId != null)
                         {
                             _logger.LogInformation("Tentando rotacionar proxy para tenant {TenantId}...", config.TenantId);
 
@@ -91,6 +96,28 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution.Consumers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao processar evento connection.update via RabbitMQ");
+                throw;
+            }
+        }
+
+        private async Task HandleMessagesUpsertAsync(EvolutionMessageEvent evento)
+        {
+            try
+            {
+                if (evento.Data is JsonElement dataElement &&
+                    dataElement.TryGetProperty("status", out var statusProp))
+                {
+                    var status = statusProp.GetString();
+
+                    if (status == "read")
+                    {
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao processar evento messages.upsert via RabbitMQ");
                 throw;
             }
         }
