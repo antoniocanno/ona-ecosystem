@@ -15,9 +15,9 @@ public static class HangfireJobRegistrationExtensions
             worker => worker.RefreshExpiringTokensAsync(),
             Cron.MinuteInterval(5));
 
-        recurringJobManager.AddOrUpdate<IDailyReminderScheduler>(
-            "whatsapp-daily-reminder-scheduler",
-            scheduler => scheduler.ScheduleDailyRemindersAsync(),
+        recurringJobManager.AddOrUpdate<IAppointmentReminderScheduler>(
+            "whatsapp-appointment-reminder-scheduler",
+            scheduler => scheduler.ScheduleRemindersAsync(),
             Cron.HourInterval(1));
 
         return host;

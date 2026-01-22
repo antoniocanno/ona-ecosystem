@@ -41,12 +41,6 @@ namespace Ona.Commit.Infrastructure.Jobs
                 return;
             }
 
-            if (appointment.Status != AppointmentStatus.Confirmed)
-            {
-                _logger.LogWarning("Job abortado: Agendamento {Id} não está mais confirmado. Status: {Status}", appointmentId, appointment.Status);
-                return;
-            }
-
             _logger.LogInformation("Processando lembrete (Evolution API) para Agendamento {Id}...", appointmentId);
 
             try

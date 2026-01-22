@@ -29,7 +29,6 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
 
         public async Task<string> EnqueueAsync(string instanceName, Func<EvolutionWhatsAppGateway, Task<string>> action)
         {
-            // Garante que apenas uma thread local processe o agendamento por vez para esta instância
             var semaphore = _instanceLocks.GetOrAdd(instanceName, _ => new SemaphoreSlim(1, 1));
             await semaphore.WaitAsync();
 
