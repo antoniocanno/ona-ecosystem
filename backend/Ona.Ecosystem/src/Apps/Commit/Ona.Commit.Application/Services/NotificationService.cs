@@ -63,7 +63,7 @@ namespace Ona.Commit.Application.Services
             var appointment = await _appointmentRepository.GetByIdAsync(appointmentId, a => a.Customer!, a => a.Professional!);
             if (appointment == null || appointment.TenantId == Guid.Empty) return;
 
-            if (appointment.Customer != null && !string.IsNullOrEmpty(appointment.Customer.PhoneNumber))
+            if (!string.IsNullOrEmpty(appointment.Customer?.PhoneNumber))
             {
                 var message = $"Seu agendamento com {appointment.Professional?.Name} para {appointment.StartDate:dd/MM HH:mm} foi cancelado com sucesso. Caso queira reagendar, entre em contato.";
                 try
@@ -75,6 +75,9 @@ namespace Ona.Commit.Application.Services
                     _logger.LogError(ex, "Falha ao enviar mensagem de cancelamento para {PhoneNumber}", appointment.Customer.PhoneNumber);
                 }
             }
+
+            // Priority 2: Email (TODO)
+            // if (!string.IsNullOrEmpty(appointment.Customer.Email)) { ... }
         }
 
         public async Task NotifyProfessionalCancellationAsync(Guid appointmentId)

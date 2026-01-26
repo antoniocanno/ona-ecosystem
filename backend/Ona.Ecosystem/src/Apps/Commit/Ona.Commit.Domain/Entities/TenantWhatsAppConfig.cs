@@ -8,10 +8,6 @@ namespace Ona.Commit.Domain.Entities
         public WhatsAppProvider Provider { get; set; } = WhatsAppProvider.None;
         public bool IsUsingSharedAccount { get; set; } = true;
 
-        // Meta Cloud API
-        public string? PhoneNumberId { get; set; }
-        public string? WabaId { get; set; }
-
         // Evolution API
         public string? InstanceName { get; set; }
         public string? ApiKey { get; set; }
@@ -31,15 +27,6 @@ namespace Ona.Commit.Domain.Entities
             IsUsingSharedAccount = isUsingSharedAccount;
         }
 
-        public void UpdateMetaCredentials(string? phoneNumberId, string? wabaId)
-        {
-            Provider = WhatsAppProvider.MetaCloud;
-            PhoneNumberId = phoneNumberId;
-            WabaId = wabaId;
-            IsUsingSharedAccount = string.IsNullOrEmpty(phoneNumberId) && string.IsNullOrEmpty(wabaId);
-            Update();
-        }
-
         public void UpdateEvolutionCredentials(string instanceName, string? apiKey)
         {
             Provider = WhatsAppProvider.Evolution;
@@ -53,8 +40,6 @@ namespace Ona.Commit.Domain.Entities
         {
             IsUsingSharedAccount = true;
             Provider = WhatsAppProvider.None;
-            PhoneNumberId = null;
-            WabaId = null;
             InstanceName = null;
             ApiKey = null;
             Update();

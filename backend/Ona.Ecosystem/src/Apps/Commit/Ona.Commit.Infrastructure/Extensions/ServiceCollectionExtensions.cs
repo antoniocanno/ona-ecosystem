@@ -34,7 +34,6 @@ public static class ServiceCollectionExtensions
 
         // WhatsApp Repositories
         services.AddScoped<ITenantWhatsAppConfigRepository, TenantWhatsAppConfigRepository>();
-        services.AddScoped<IWhatsAppTemplateRegistryRepository, WhatsAppTemplateRegistryRepository>();
         services.AddScoped<IMessageInteractionLogRepository, MessageInteractionLogRepository>();
         services.AddScoped<IMessageTemplateRepository, MessageTemplateRepository>();
 
@@ -55,15 +54,11 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IOutlookCalendarService, OutlookCalendarService>();
 
         // WhatsApp Services
-        services.AddScoped<IWhatsAppClientFactory, WhatsAppClientFactory>();
         services.AddScoped<ITemplateMessageBuilder, TemplateMessageBuilder>();
-        services.AddScoped<IMetaCloudSenderService, MetaCloudSenderService>();
+
 
         // WhatsApp Gateway (Evolution API)
         services.AddScoped<IWhatsAppGateway, EvolutionWhatsAppGateway>();
-
-        // HttpClient for WhatsApp (used by Factory)
-        services.AddHttpClient("WhatsAppClient");
 
         services.AddHttpClient("Ona.Auth", client =>
         {

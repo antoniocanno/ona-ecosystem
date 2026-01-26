@@ -3,7 +3,7 @@ using Ona.Commit.Domain.Entities;
 namespace Ona.Commit.Domain.Interfaces.Gateways
 {
     /// <summary>
-    /// Gateway para integração com provedores de WhatsApp (Evolution API, Meta Cloud API, etc.)
+    /// Gateway para integração com provedores de WhatsApp (Evolution API, etc.)
     /// </summary>
     public interface IWhatsAppGateway
     {

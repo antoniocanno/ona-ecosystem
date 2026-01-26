@@ -1,4 +1,5 @@
-﻿using Ona.Core.Interfaces;
+﻿using Ona.Core.Common.Exceptions;
+using Ona.Core.Interfaces;
 using Ona.Core.Tenant;
 
 namespace Ona.ServiceDefaults.Services
@@ -19,7 +20,7 @@ namespace Ona.ServiceDefaults.Services
         private TenantContext? _current;
 
         public TenantContext Current
-            => _current ?? throw new InvalidOperationException("Contexto do cliente não está disponível.");
+            => _current ?? throw new ValidationException("Contexto do cliente não está disponível.");
 
         public void SetCurrent(TenantContext context)
             => _current = context;
@@ -27,7 +28,7 @@ namespace Ona.ServiceDefaults.Services
         public async Task<TenantContext> GetCurrentContextAsync()
         {
             if (!_currentTenant.IsAvailable)
-                throw new InvalidOperationException("");
+                throw new ValidationException("Tenant atual não está disponível no contexto da requisição.");
 
             return await _tenantProvider.GetAsync(_currentTenant.Id!.Value);
         }

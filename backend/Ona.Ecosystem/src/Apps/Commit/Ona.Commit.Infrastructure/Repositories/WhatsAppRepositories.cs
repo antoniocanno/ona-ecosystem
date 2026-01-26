@@ -34,16 +34,6 @@ namespace Ona.Commit.Infrastructure.Repositories
         }
     }
 
-    public class WhatsAppTemplateRegistryRepository : BaseRepository<CommitDbContext, WhatsAppTemplateRegistry>, IWhatsAppTemplateRegistryRepository
-    {
-        public WhatsAppTemplateRegistryRepository(CommitDbContext context) : base(context) { }
-
-        public async Task<WhatsAppTemplateRegistry?> GetByLogicalNameAsync(Guid tenantId, string logicalName)
-        {
-            return await _dbSet.FirstOrDefaultAsync(x => x.TenantId == tenantId && x.LogicalName == logicalName);
-        }
-    }
-
     public class MessageInteractionLogRepository : BaseRepository<CommitDbContext, MessageInteractionLog>, IMessageInteractionLogRepository
     {
         public MessageInteractionLogRepository(CommitDbContext context) : base(context) { }

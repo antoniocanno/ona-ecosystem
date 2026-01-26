@@ -16,7 +16,6 @@ namespace Ona.Commit.Infrastructure.Data
         public DbSet<CalendarIntegration> CalendarIntegrations { get; set; } = null!;
         public DbSet<ExternalCalendarEventMapping> ExternalCalendarEventMappings { get; set; } = null!;
         public DbSet<TenantWhatsAppConfig> TenantWhatsAppConfigs { get; set; } = null!;
-        public DbSet<WhatsAppTemplateRegistry> WhatsAppTemplateRegistries { get; set; } = null!;
         public DbSet<MessageInteractionLog> MessageInteractionLogs { get; set; } = null!;
         public DbSet<ProxyServer> ProxyServers { get; set; } = null!;
         public DbSet<OperatorAlert> OperatorAlerts { get; set; } = null!;
@@ -42,7 +41,6 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureExternalCalendarEventMappingEntity(modelBuilder);
             ConfigureMessageTemplateEntity(modelBuilder);
             ConfigureTenantWhatsAppConfigEntity(modelBuilder);
-            ConfigureWhatsAppTemplateRegistryEntity(modelBuilder);
             ConfigureMessageInteractionLogEntity(modelBuilder);
             ConfigureProxyServerEntity(modelBuilder);
             ConfigureOperatorAlertEntity(modelBuilder);
@@ -60,7 +58,6 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<CalendarIntegration>().ToTable("CalendarIntegrations");
             modelBuilder.Entity<ExternalCalendarEventMapping>().ToTable("ExternalCalendarEventMappings");
             modelBuilder.Entity<TenantWhatsAppConfig>().ToTable("TenantWhatsAppConfigs");
-            modelBuilder.Entity<WhatsAppTemplateRegistry>().ToTable("WhatsAppTemplateRegistries");
             modelBuilder.Entity<MessageInteractionLog>().ToTable("MessageInteractionLogs");
             modelBuilder.Entity<ProxyServer>().ToTable("ProxyServers");
             modelBuilder.Entity<OperatorAlert>().ToTable("OperatorAlerts");
@@ -143,18 +140,6 @@ namespace Ona.Commit.Infrastructure.Data
             {
                 entity.HasKey(t => t.Id);
                 entity.HasIndex(t => new { t.TenantId, t.InstanceName }).IsUnique();
-            });
-        }
-
-        private static void ConfigureWhatsAppTemplateRegistryEntity(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<WhatsAppTemplateRegistry>(entity =>
-            {
-                entity.HasKey(w => w.Id);
-                entity.HasIndex(w => new { w.TenantId, w.LogicalName }).IsUnique();
-                entity.Property(w => w.LogicalName).HasMaxLength(100).IsRequired();
-                entity.Property(w => w.MetaTemplateName).HasMaxLength(100).IsRequired();
-                entity.Property(w => w.LanguageCode).HasMaxLength(10).HasDefaultValue("pt_BR");
             });
         }
 

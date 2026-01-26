@@ -41,38 +41,48 @@ namespace Ona.Commit.Infrastructure.Jobs
                 return;
             }
 
-            _logger.LogInformation("Processando lembrete (Evolution API) para Agendamento {Id}...", appointmentId);
+            _logger.LogInformation("Processando lembrete para Agendamento {Id}...", appointmentId);
 
             try
             {
                 var message = await _messageBuilder.BuildTextReminderAsync(appointment);
 
-                var instanceName = $"tenant_{appointment.TenantId:N}";
+                if (!string.IsNullOrEmpty(appointment.Customer?.PhoneNumber))
+                {
+                    var instanceName = $"tenant_{appointment.TenantId:N}";
 
-                var externalMessageId = await _whatsAppGateway.SendTextMessageAsync(instanceName, appointment.Customer!.PhoneNumber, message);
+                    var externalMessageId = await _whatsAppGateway.SendTextMessageAsync(instanceName, appointment.Customer!.PhoneNumber, message);
 
-                var log = new MessageInteractionLog(
-                    appointment.TenantId,
-                    externalMessageId,
-                    appointment.Id,
-                    0.0m,
-                    NotificationStatus.Sent,
-                    message
-                );
+                    var log = new MessageInteractionLog(
+                        appointment.TenantId,
+                        externalMessageId,
+                        appointment.Id,
+                        0.0m,
+                        NotificationStatus.Sent,
+                        message
+                    );
 
-                await _logRepository.CreateAsync(log);
+                    await _logRepository.CreateAsync(log);
 
-                appointment.MarkReminderAsSent();
-                _appointmentRepository.Update(appointment);
-                await _appointmentRepository.SaveChangesAsync();
+                    appointment.MarkReminderAsSent();
+                    _appointmentRepository.Update(appointment);
+                    await _appointmentRepository.SaveChangesAsync();
 
-                _logger.LogInformation("Lembrete enviado com sucesso via Evolution. ID: {ExternalId}", externalMessageId);
+                    _logger.LogInformation("Lembrete enviado com sucesso via Evolution. ID: {ExternalId}", externalMessageId);
+
+                    return;
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao enviar lembrete via Evolution para Agendamento {Id}.", appointmentId);
-                throw;
             }
+
+            // TODO: Implementar fallback para SMS
+            //if (!string.IsNullOrEmpty(appointment.Customer?.PhoneNumber)) { ... }
+
+            // TODO: Implementar fallback para Email
+            //if (!string.IsNullOrEmpty(appointment.Customer?.Email)) { ... }
         }
     }
 }

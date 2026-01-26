@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Ona.Commit.Infrastructure.Data;
+using Ona.Core.Common.Exceptions;
 using Polly;
 using Polly.Retry;
 
@@ -35,7 +36,7 @@ namespace Ona.Commit.API.Extensions
                     logger.LogInformation("Checking database connectivity...");
 
                     if (!await db.Database.CanConnectAsync(ct))
-                        throw new Exception("Database connection failed.");
+                        throw new ConfigurationException("Database connection failed.");
 
                     var pending = (await db.Database.GetPendingMigrationsAsync(ct)).ToList();
 
