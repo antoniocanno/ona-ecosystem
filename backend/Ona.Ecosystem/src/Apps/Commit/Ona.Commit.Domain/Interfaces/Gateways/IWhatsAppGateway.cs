@@ -1,4 +1,5 @@
 using Ona.Commit.Domain.Entities;
+using Ona.Commit.Domain.Enums;
 
 namespace Ona.Commit.Domain.Interfaces.Gateways
 {
@@ -64,6 +65,15 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         /// </summary>
         /// <param name="instanceName">Nome da instância</param>
         Task SetRabbitMqConfigAsync(string instanceName);
+
+        /// <summary>
+        /// Obtém o status atual de uma mensagem enviada
+        /// </summary>
+        /// <param name="instanceName">Nome da instância</param>
+        /// <param name="phoneNumber">Número de telefone do destinatário (formato internacional)</param>
+        /// <param name="messageId">ID da mensagem (ExternalMessageId)</param>
+        /// <returns>Status atual da mensagem</returns>
+        Task<NotificationStatus> GetMessageStatusAsync(string instanceName, string phoneNumber, string messageId);
     }
 }
 
@@ -102,6 +112,5 @@ namespace Ona.Commit.Domain.Interfaces.Gateways
         public string InstanceName { get; set; } = string.Empty;
         public string State { get; set; } = string.Empty;
         public bool IsConnected { get; set; }
-        public string? PhoneNumber { get; set; }
     }
 }

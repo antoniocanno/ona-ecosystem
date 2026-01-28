@@ -72,7 +72,10 @@ public static class ServiceCollectionExtensions
 
         services.AddStackExchangeRedisCache(options =>
         {
-            var redisConnection = configuration.GetConnectionString("redis");
+            var redisConnection = configuration.GetConnectionString("cache")
+                                  ?? configuration.GetConnectionString("redis")
+                                  ?? "localhost";
+
             options.Configuration = redisConnection;
             options.InstanceName = "Ona_Commit_";
         });

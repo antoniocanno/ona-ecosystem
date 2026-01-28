@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Ona.Commit.Domain.Entities;
+using Ona.Commit.Domain.Enums;
 using Ona.Commit.Domain.Interfaces.Gateways;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Ona.Commit.Infrastructure.Gateways.Evolution
@@ -39,7 +41,7 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
                 proxyPassword = proxy?.Password,
             };
 
-            var response = await _httpClient.PostAsJsonAsync("/instance/create", request, new System.Text.Json.JsonSerializerOptions
+            var response = await _httpClient.PostAsJsonAsync("/instance/create", request, new JsonSerializerOptions
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             });
@@ -131,9 +133,8 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
             return new WhatsAppConnectionStatus
             {
                 InstanceName = instanceName,
-                State = result?.State ?? "close",
-                IsConnected = result?.State?.ToLower() == "open",
-                PhoneNumber = result?.Instance?.Owner
+                State = result?.Instance?.State ?? "close",
+                IsConnected = result?.Instance?.State?.ToLower() == "open",
             };
         }
 
@@ -241,7 +242,7 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
                 password = proxy.Password
             };
 
-            var response = await _httpClient.PostAsJsonAsync($"/proxy/set/{instanceName}", request, new System.Text.Json.JsonSerializerOptions
+            var response = await _httpClient.PostAsJsonAsync($"/proxy/set/{instanceName}", request, new JsonSerializerOptions
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             });
@@ -273,6 +274,97 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
                 throw new HttpRequestException($"Falha ao configurar RabbitMQ: {error}");
             }
         }
+
+        public async Task<NotificationStatus> GetMessageStatusAsync(string instanceName, string phoneNumber, string messageId)
+        {
+            _logger.LogInformation("Buscando status da mensagem {MessageId} na instância {InstanceName}", messageId, instanceName);
+
+            var formattedPhone = phoneNumber.Replace("+", "").Replace("-", "").Replace(" ", "").Replace("(", "").Replace(")", "");
+            var remoteJid = formattedPhone.Contains("@") ? formattedPhone : $"{formattedPhone}@s.whatsapp.net";
+
+            var requestBody = new
+            {
+                where = new
+                {
+                    id = messageId,
+                    remoteJid = remoteJid,
+                    fromMe = true
+                },
+                offset = 10,
+                page = 1,
+            };
+
+            var response = await _httpClient.PostAsJsonAsync($"/chat/findStatusMessage/{instanceName}", requestBody, new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("Falha ao buscar status da mensagem: {StatusCode} - {Response}", response.StatusCode, error);
+
+                if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+                {
+                    return NotificationStatus.Scheduled;
+                }
+
+                throw new HttpRequestException($"Falha ao buscar status da mensagem: {error}");
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(content);
+            var root = doc.RootElement;
+
+            string? statusStr = null;
+
+            if (root.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in root.EnumerateArray())
+                {
+                    if (item.TryGetProperty("key", out var key) && key.TryGetProperty("id", out var idProp) && idProp.GetString() == messageId)
+                    {
+                        if (item.TryGetProperty("status", out var s))
+                        {
+                            statusStr = s.GetString();
+                            break;
+                        }
+                    }
+                }
+            }
+            else if (root.ValueKind == JsonValueKind.Object)
+            {
+                if (root.TryGetProperty("key", out var key) && key.TryGetProperty("id", out var idProp) && idProp.GetString() == messageId)
+                {
+                    if (root.TryGetProperty("status", out var s))
+                    {
+                        statusStr = s.GetString();
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(statusStr))
+            {
+                _logger.LogWarning("Status para mensagem {MessageId} não encontrado no retorno da API", messageId);
+                return NotificationStatus.Scheduled;
+            }
+
+            return MapEvolutionStatusToDomain(statusStr);
+        }
+
+        private NotificationStatus MapEvolutionStatusToDomain(string status)
+        {
+            return status?.ToUpper() switch
+            {
+                "PENDING" => NotificationStatus.Sent,
+                "SERVER_ACK" => NotificationStatus.Sent,
+                "DELIVERY_ACK" => NotificationStatus.Delivered,
+                "READ" => NotificationStatus.Read,
+                "PLAYED" => NotificationStatus.Read,
+                "ERROR" => NotificationStatus.Failed,
+                _ => NotificationStatus.Sent
+            };
+        }
     }
 
     #region Evolution API Response Models
@@ -299,9 +391,6 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
 
         [JsonPropertyName("state")]
         public string? State { get; set; }
-
-        [JsonPropertyName("owner")]
-        public string? Owner { get; set; }
     }
 
     internal class EvolutionQrCodeInfo
@@ -327,8 +416,6 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
 
     internal class EvolutionConnectionStateResponse
     {
-        [JsonPropertyName("state")]
-        public string? State { get; set; }
 
         [JsonPropertyName("instance")]
         public EvolutionInstanceInfo? Instance { get; set; }

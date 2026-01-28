@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Ona.Commit.Application.DTOs.Requests;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Core.Common.Enums;
 using Ona.Core.Interfaces;
@@ -102,7 +103,6 @@ namespace Ona.Commit.API.Controllers
                 {
                     isConnected = status.IsConnected,
                     state = status.State,
-                    phoneNumber = status.PhoneNumber,
                     instanceName = status.InstanceName
                 });
             }
@@ -129,6 +129,64 @@ namespace Ona.Commit.API.Controllers
             {
                 _logger.LogError(ex, "Erro ao desconectar WhatsApp");
                 return StatusCode(500, new { message = "Erro ao desconectar", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Envia uma mensagem de teste para validar a conexão
+        /// </summary>
+        [HttpPost("send-test-message")]
+        [AuthorizeRoles(Role.Operator)]
+        public async Task<IActionResult> SendTestMessage([FromBody] SendTestMessageRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.PhoneNumber) || string.IsNullOrWhiteSpace(request.Message))
+                {
+                    return BadRequest(new { message = "Número de telefone e mensagem são obrigatórios" });
+                }
+
+                var messageId = await _appService.SendTextMessageAsync(_currentTenant.Id.Value, request.PhoneNumber, request.Message);
+
+                return Ok(new
+                {
+                    message = "Mensagem enviada com sucesso",
+                    messageId = messageId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao enviar mensagem de teste");
+                return StatusCode(500, new { message = "Erro ao enviar mensagem", error = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Obtém o status de uma mensagem enviada
+        /// </summary>
+        [HttpPost("message-status")]
+        [AuthorizeRoles(Role.Operator)]
+        public async Task<IActionResult> GetMessageStatus([FromBody] GetMessageStatusRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request?.PhoneNumber) || string.IsNullOrWhiteSpace(request?.MessageId))
+                {
+                    return BadRequest(new { message = "O número de telefone e o ID da mensagem são obrigatórios." });
+                }
+
+                var status = await _appService.GetMessageStatusAsync(_currentTenant.Id.Value, request.PhoneNumber, request.MessageId);
+                return Ok(new
+                {
+                    messageId = request.MessageId,
+                    status = status.ToString(),
+                    statusCode = (int)status
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar status da mensagem");
+                return StatusCode(500, new { message = "Erro ao buscar status", error = ex.Message });
             }
         }
     }

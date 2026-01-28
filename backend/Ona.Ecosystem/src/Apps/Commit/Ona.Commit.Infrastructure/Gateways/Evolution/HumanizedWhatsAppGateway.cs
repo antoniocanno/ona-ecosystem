@@ -1,4 +1,5 @@
 using Ona.Commit.Domain.Entities;
+using Ona.Commit.Domain.Enums;
 using Ona.Commit.Domain.Interfaces.Gateways;
 using Ona.Commit.Domain.Interfaces.Repositories;
 
@@ -124,6 +125,28 @@ namespace Ona.Commit.Infrastructure.Gateways.Evolution
             {
                 throw new InvalidOperationException($"Envio bloqueado fora do horário comercial (08:00 - 20:00). Hora atual: {brazilTime:HH:mm}.");
             }
+        }
+
+        public async Task<NotificationStatus> GetMessageStatusAsync(string instanceName, string phoneNumber, string messageId)
+        {
+            var status = await _client.GetMessageStatusAsync(instanceName, phoneNumber, messageId);
+
+            try
+            {
+                var log = await _logRepository.GetByExternalMessageIdAsync(messageId);
+                if (log != null && log.Status != status)
+                {
+                    log.UpdateStatus(status);
+                    _logRepository.Update(log);
+                    await _logRepository.SaveChangesAsync();
+                }
+            }
+            catch
+            {
+                // Ignorar falhas na atualização do log para não atrapalhar o retorno do status
+            }
+
+            return status;
         }
     }
 }

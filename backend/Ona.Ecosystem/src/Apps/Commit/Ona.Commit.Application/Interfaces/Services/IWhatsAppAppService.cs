@@ -1,3 +1,4 @@
+using Ona.Commit.Domain.Enums;
 using Ona.Commit.Domain.Interfaces.Gateways;
 
 namespace Ona.Commit.Application.Interfaces.Services;
@@ -31,4 +32,9 @@ public interface IWhatsAppAppService
     /// Envia uma mensagem de teste
     /// </summary>
     Task<string> SendTextMessageAsync(Guid tenantId, string phoneNumber, string message);
+
+    /// <summary>
+    /// Obtém o status de uma mensagem
+    /// </summary>
+    Task<NotificationStatus> GetMessageStatusAsync(Guid tenantId, string phoneNumber, string messageId);
 }

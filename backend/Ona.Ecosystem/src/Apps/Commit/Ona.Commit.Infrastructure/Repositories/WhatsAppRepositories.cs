@@ -58,7 +58,8 @@ namespace Ona.Commit.Infrastructure.Repositories
 
         public async Task<int> CountMessagesSentTodayAsync(Guid tenantId)
         {
-            var today = DateTimeOffset.UtcNow.Date;
+            var now = DateTimeOffset.UtcNow;
+            var today = new DateTimeOffset(now.Year, now.Month, now.Day, 0, 0, 0, TimeSpan.Zero);
             return await _dbSet.CountAsync(x => x.TenantId == tenantId && x.CreatedAt >= today);
         }
     }

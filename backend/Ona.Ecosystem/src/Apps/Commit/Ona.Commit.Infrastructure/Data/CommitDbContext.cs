@@ -19,6 +19,7 @@ namespace Ona.Commit.Infrastructure.Data
         public DbSet<MessageInteractionLog> MessageInteractionLogs { get; set; } = null!;
         public DbSet<ProxyServer> ProxyServers { get; set; } = null!;
         public DbSet<OperatorAlert> OperatorAlerts { get; set; } = null!;
+        public DbSet<WhatsAppNumberVerification> WhatsAppNumberVerifications { get; set; } = null!;
 
         public CommitDbContext() : base() { }
 
@@ -44,6 +45,7 @@ namespace Ona.Commit.Infrastructure.Data
             ConfigureMessageInteractionLogEntity(modelBuilder);
             ConfigureProxyServerEntity(modelBuilder);
             ConfigureOperatorAlertEntity(modelBuilder);
+            ConfigureWhatsAppNumberVerificationEntity(modelBuilder);
 
             modelBuilder.ApplyTenantFilters(_currentTenant);
         }
@@ -61,6 +63,7 @@ namespace Ona.Commit.Infrastructure.Data
             modelBuilder.Entity<MessageInteractionLog>().ToTable("MessageInteractionLogs");
             modelBuilder.Entity<ProxyServer>().ToTable("ProxyServers");
             modelBuilder.Entity<OperatorAlert>().ToTable("OperatorAlerts");
+            modelBuilder.Entity<WhatsAppNumberVerification>().ToTable("WhatsAppNumberVerifications");
         }
 
         private static void ConfigureCustomerEntity(ModelBuilder modelBuilder)
@@ -181,6 +184,16 @@ namespace Ona.Commit.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(o => o.RelatedAppointmentId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+        }
+
+        private static void ConfigureWhatsAppNumberVerificationEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WhatsAppNumberVerification>(entity =>
+            {
+                entity.HasKey(w => w.Id);
+                entity.HasIndex(w => w.PhoneNumber).IsUnique();
+                entity.Property(w => w.PhoneNumber).HasMaxLength(20).IsRequired();
             });
         }
 

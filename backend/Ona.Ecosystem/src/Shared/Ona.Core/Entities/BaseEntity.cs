@@ -4,8 +4,8 @@ namespace Ona.Core.Entities
 {
     public abstract class BaseEntity
     {
-        public Guid Id { get; } = GuidGenerator.NewSequentialGuid();
-        public DateTimeOffset CreatedAt { get; } = DateTimeOffset.UtcNow;
+        public Guid Id { get; protected set; } = GuidGenerator.NewSequentialGuid();
+        public DateTimeOffset CreatedAt { get; protected set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? UpdatedAt { get; protected set; }
         public bool IsDeleted { get; protected set; } = false;
 

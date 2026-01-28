@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Ona.Commit.Application.Interfaces.Services;
 using Ona.Commit.Domain.Entities;
+using Ona.Commit.Domain.Enums;
 using Ona.Commit.Domain.Interfaces.Gateways;
 using Ona.Commit.Domain.Interfaces.Repositories;
 
@@ -113,6 +114,15 @@ public class WhatsAppAppService : IWhatsAppAppService
             $"tenant_{tenantId:N}",
             phoneNumber,
             message
+        );
+    }
+
+    public async Task<NotificationStatus> GetMessageStatusAsync(Guid tenantId, string phoneNumber, string messageId)
+    {
+        return await _whatsAppGateway.GetMessageStatusAsync(
+            $"tenant_{tenantId:N}",
+            phoneNumber,
+            messageId
         );
     }
 }
