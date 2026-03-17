@@ -1,0 +1,152 @@
+using Ona.Commit.Domain.Entities;
+using Ona.Commit.Domain.Enums;
+using Ona.Commit.Domain.Interfaces.Gateways;
+using Ona.Commit.Domain.Interfaces.Repositories;
+
+namespace Ona.Commit.Infrastructure.Gateways.Evolution
+{
+    /// <summary>
+    /// Gateway decorador que adiciona "humanização" (delay + fila) no envio de mensagens
+    /// para evitar bloqueios do WhatsApp.
+    /// </summary>
+    public class HumanizedWhatsAppGateway : IWhatsAppGateway
+    {
+        private readonly EvolutionWhatsAppGateway _client;
+        private readonly EvolutionMessageDispatcher _dispatcher;
+        private readonly IWhatsAppNumberVerificationRepository _verificationRepository;
+        private readonly ITenantWhatsAppConfigRepository _configRepository;
+        private readonly IMessageInteractionLogRepository _logRepository;
+
+        public HumanizedWhatsAppGateway(
+            EvolutionWhatsAppGateway client,
+            EvolutionMessageDispatcher dispatcher,
+            IWhatsAppNumberVerificationRepository verificationRepository,
+            ITenantWhatsAppConfigRepository configRepository,
+            IMessageInteractionLogRepository logRepository)
+        {
+            _client = client;
+            _dispatcher = dispatcher;
+            _verificationRepository = verificationRepository;
+            _configRepository = configRepository;
+            _logRepository = logRepository;
+        }
+
+        public Task<WhatsAppInstanceResponse> CreateInstanceAsync(Guid tenantId, string instanceName, ProxyServer? proxy = null)
+            => _client.CreateInstanceAsync(tenantId, instanceName, proxy);
+
+        public Task<WhatsAppQrCodeResponse> GetQrCodeAsync(string instanceName)
+            => _client.GetQrCodeAsync(instanceName);
+
+        public Task<WhatsAppQrCodeResponse> RestartInstanceAsync(string instanceName)
+            => _client.RestartInstanceAsync(instanceName);
+
+        public Task<WhatsAppConnectionStatus> GetConnectionStatusAsync(string instanceName)
+            => _client.GetConnectionStatusAsync(instanceName);
+
+        public Task DeleteInstanceAsync(string instanceName)
+            => _client.DeleteInstanceAsync(instanceName);
+
+        public Task<string> SendTextMessageAsync(string instanceName, string phoneNumber, string message)
+        {
+            return _dispatcher.EnqueueAsync(instanceName, async (client) =>
+            {
+                await ValidateWarmUpLimitAsync(instanceName);
+                await ValidateNumberAsync(instanceName, phoneNumber, client);
+
+                var typingDuration = new Random().Next(2000, 4500);
+
+                await client.SendPresenceAsync(instanceName, phoneNumber, "composing", typingDuration);
+
+                await Task.Delay(typingDuration);
+
+                return await client.SendTextMessageAsync(instanceName, phoneNumber, message);
+            });
+        }
+
+        public Task SetProxyAsync(string instanceName, ProxyServer proxy)
+            => _client.SetProxyAsync(instanceName, proxy);
+
+        public Task SetRabbitMqConfigAsync(string instanceName)
+            => _client.SetRabbitMqConfigAsync(instanceName);
+
+        private async Task ValidateNumberAsync(string instanceName, string phoneNumber, EvolutionWhatsAppGateway client)
+        {
+            var cleanPhone = phoneNumber.Replace("+", "").Replace("-", "").Replace(" ", "");
+            var cached = await _verificationRepository.GetByPhoneNumberAsync(cleanPhone);
+
+            if (cached != null)
+            {
+                if (!cached.IsValid)
+                {
+                    throw new InvalidOperationException($"O número {phoneNumber} é inválido no WhatsApp e foi bloqueado preventivamente.");
+                }
+            }
+            else
+            {
+                var isValid = await client.CheckNumberAsync(instanceName, phoneNumber);
+
+                var verification = new WhatsAppNumberVerification(cleanPhone, isValid);
+
+                await _verificationRepository.CreateAsync(verification);
+                await _verificationRepository.SaveChangesAsync();
+            }
+        }
+
+        private async Task ValidateWarmUpLimitAsync(string instanceName)
+        {
+            if (!instanceName.StartsWith("tenant_")) return;
+
+            var tenantIdString = instanceName.Replace("tenant_", "");
+            if (!Guid.TryParse(tenantIdString, out var tenantId))
+            {
+                return;
+            }
+
+            var config = await _configRepository.GetByTenantIdAsync(tenantId);
+            if (config == null) return;
+
+            var daysActive = (DateTimeOffset.UtcNow - config.CreatedAt).TotalDays;
+            int limit = daysActive switch
+            {
+                <= 3 => 50,
+                <= 7 => 100,
+                _ => 1000,
+            };
+
+            var sentToday = await _logRepository.CountMessagesSentTodayAsync(tenantId);
+
+            if (sentToday >= limit)
+            {
+                throw new InvalidOperationException($"Limite diário de aquecimento atingido para esta instância. Idade: {daysActive:F1} dias. Limite: {limit} mensagens. Enviadas hoje: {sentToday}.");
+            }
+
+            var brazilTime = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-3));
+            if (brazilTime.Hour is < 8 or >= 20)
+            {
+                throw new InvalidOperationException($"Envio bloqueado fora do horário comercial (08:00 - 20:00). Hora atual: {brazilTime:HH:mm}.");
+            }
+        }
+
+        public async Task<NotificationStatus> GetMessageStatusAsync(string instanceName, string phoneNumber, string messageId)
+        {
+            var status = await _client.GetMessageStatusAsync(instanceName, phoneNumber, messageId);
+
+            try
+            {
+                var log = await _logRepository.GetByExternalMessageIdAsync(messageId);
+                if (log != null && log.Status != status)
+                {
+                    log.UpdateStatus(status);
+                    _logRepository.Update(log);
+                    await _logRepository.SaveChangesAsync();
+                }
+            }
+            catch
+            {
+                // Ignorar falhas na atualização do log para não atrapalhar o retorno do status
+            }
+
+            return status;
+        }
+    }
+}

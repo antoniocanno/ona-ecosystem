@@ -1,9 +1,17 @@
+using MassTransit;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Ona.Core.Interfaces;
+using Ona.Core.Tenant;
+using Ona.Infrastructure.Shared.Integrations;
+using Ona.ServiceDefaults.ApiExtensions;
+using Ona.ServiceDefaults.Services;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -18,30 +26,108 @@ public static class Extensions
     private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
 
-    public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    public static TBuilder AddApiServiceDefaults<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
     {
         builder.ConfigureOpenTelemetry();
 
+        builder.AddCommonServiceDefaults(configureMassTransit, configureRabbitMq);
+
+        builder.Services.AddSwaggerDocumentation();
+        builder.Services.AddJwtAuthentication(builder.Configuration);
+
+        builder.ConfigureRoute();
+
+        return builder;
+    }
+
+    public static TBuilder AddWorkerServiceDefaults<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
+    {
+        return builder.AddCommonServiceDefaults(configureMassTransit, configureRabbitMq);
+    }
+
+    private static TBuilder AddCommonServiceDefaults<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
+    {
         builder.AddDefaultHealthChecks();
 
         builder.Services.AddServiceDiscovery();
 
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            // Turn on resilience by default
             http.AddStandardResilienceHandler();
-
-            // Turn on service discovery by default
             http.AddServiceDiscovery();
         });
 
-        // Uncomment the following to restrict the allowed schemes for service discovery.
-        // builder.Services.Configure<ServiceDiscoveryOptions>(options =>
-        // {
-        //     options.AllowedSchemes = ["https"];
-        // });
+        builder.Services.AddDistributedMemoryCache();
+        builder.Services.AddMemoryCache();
+        builder.Services.AddHttpContextAccessor();
+
+        builder.AddTenantServices();
+        builder.AddMessagingServices(configureMassTransit, configureRabbitMq);
+        builder.AddCustomSerilog();
 
         return builder;
+    }
+
+    private static void AddTenantServices<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.AddSingleton<ICurrentUser, CurrentUser>();
+        builder.Services.AddSingleton<ICurrentTenant, CurrentTenant>();
+        builder.Services.AddScoped<ITenantContextAccessor, TenantContextAccessor>();
+
+        builder.Services.AddTransient<InternalApiKeyHandler>();
+
+        builder.Services.AddHttpClient<ITenantProvider, TenantHttpClient>(client =>
+        {
+            client.BaseAddress = new Uri("http://ona-auth-api");
+        })
+        .AddHttpMessageHandler<InternalApiKeyHandler>()
+        .AddServiceDiscovery()
+        .AddStandardResilienceHandler();
+    }
+
+    private static void AddMessagingServices<TBuilder>(
+        this TBuilder builder,
+        Action<IBusRegistrationConfigurator>? configureMassTransit = null,
+        Action<IBusRegistrationContext, IRabbitMqBusFactoryConfigurator>? configureRabbitMq = null) where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.AddMassTransit(x =>
+        {
+            x.AddConsumer<TenantUpdatedConsumer>();
+
+            configureMassTransit?.Invoke(x);
+
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                var connectionString = builder.Configuration.GetConnectionString("rabbitmq");
+                if (!string.IsNullOrEmpty(connectionString))
+                {
+                    cfg.Host(connectionString);
+                }
+
+                configureRabbitMq?.Invoke(context, cfg);
+
+                cfg.ConfigureEndpoints(context);
+            });
+        });
+    }
+
+    public static WebApplication AddServiceDefaults(this WebApplication app)
+    {
+        app.UseCustomErrorHandling();
+        app.UseEmailVerificationMiddleware();
+        app.UseRateLimitMiddleware();
+        app.UseAuthentication();
+        app.UseTenantMiddleware();
+        return app;
     }
 
     public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
@@ -62,9 +148,9 @@ public static class Extensions
             .WithTracing(tracing =>
             {
                 tracing.AddSource(builder.Environment.ApplicationName)
-                    .AddAspNetCoreInstrumentation(tracing =>
+                    .AddAspNetCoreInstrumentation(options =>
                         // Exclude health check requests from tracing
-                        tracing.Filter = context =>
+                        options.Filter = context =>
                             !context.Request.Path.StartsWithSegments(HealthEndpointPath)
                             && !context.Request.Path.StartsWithSegments(AlivenessEndpointPath)
                     )
@@ -73,9 +159,7 @@ public static class Extensions
                     .AddHttpClientInstrumentation();
             });
 
-        builder.AddOpenTelemetryExporters();
-
-        return builder;
+        return builder.AddOpenTelemetryExporters();
     }
 
     private static TBuilder AddOpenTelemetryExporters<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
@@ -123,5 +207,15 @@ public static class Extensions
         }
 
         return app;
+    }
+
+    public static TBuilder ConfigureRoute<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.Configure<RouteOptions>(options =>
+        {
+            options.LowercaseUrls = true;
+        });
+
+        return builder;
     }
 }

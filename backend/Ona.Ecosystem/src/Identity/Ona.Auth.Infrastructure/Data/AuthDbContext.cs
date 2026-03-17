@@ -2,13 +2,35 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Ona.Auth.Domain.Entities;
+using Ona.Core.Interfaces;
+using Ona.Infrastructure.Shared.Data;
 
 namespace Ona.Auth.Infrastructure.Data
 {
-    public class AuthDbContext(DbContextOptions<AuthDbContext> options) : IdentityDbContext<ApplicationUser>(options)
+    public class AuthDbContext : IdentityDbContext<
+        ApplicationUser,
+        ApplicationRole,
+        Guid,
+        IdentityUserClaim<Guid>,
+        UserTenantRole,
+        IdentityUserLogin<Guid>,
+        IdentityRoleClaim<Guid>,
+        IdentityUserToken<Guid>>
     {
+        private readonly ICurrentTenant? _currentTenant;
+
+        public AuthDbContext() : base() { }
+
+        public AuthDbContext(DbContextOptions<AuthDbContext> options, ICurrentTenant currentTenant) : base(options)
+        {
+            _currentTenant = currentTenant;
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Ignore<IdentityUserRole<Guid>>();
+            modelBuilder.Ignore<IdentityRole<Guid>>();
+
             base.OnModelCreating(modelBuilder);
 
             ConfigureTablesNames(modelBuilder);
@@ -17,17 +39,47 @@ namespace Ona.Auth.Infrastructure.Data
             ConfigurePasswordResetTokenEntity(modelBuilder);
             ConfigureRefreshTokenEntity(modelBuilder);
             ConfigureUnlockUserTokenEntity(modelBuilder);
+            ConfigureUnlockUserTokenEntity(modelBuilder);
+            ConfigureUserTenantRole(modelBuilder);
+            ConfigureTenantInviteEntity(modelBuilder);
+            ConfigureTenantEntity(modelBuilder);
+
+            modelBuilder.ApplyTenantFilters(_currentTenant);
+            SetTenantQueryFilter(modelBuilder);
+        }
+
+        private static void ConfigureTenantEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Tenant>(entity =>
+            {
+                entity.HasKey(t => t.Id);
+                entity.Property(t => t.Name).IsRequired();
+                entity.Property(t => t.Domain).IsRequired();
+                entity.Property(t => t.TimeZone).IsRequired().HasDefaultValue("America/Sao_Paulo");
+                entity.Property(t => t.WhatsAppInstanceId).HasMaxLength(100);
+                entity.Property(t => t.WhatsAppApiKey).HasMaxLength(100);
+                entity.Property(t => t.IsWhatsAppConnected).HasDefaultValue(false);
+            });
         }
 
         private static void ConfigureTablesNames(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<ApplicationUser>().ToTable("Users");
-            modelBuilder.Entity<IdentityRole>().ToTable("Roles");
-            modelBuilder.Entity<IdentityUserRole<string>>().ToTable("UserRoles");
-            modelBuilder.Entity<IdentityUserClaim<string>>().ToTable("UserClaims");
-            modelBuilder.Entity<IdentityUserLogin<string>>().ToTable("UserLogins");
-            modelBuilder.Entity<IdentityRoleClaim<string>>().ToTable("RoleClaims");
-            modelBuilder.Entity<IdentityUserToken<string>>().ToTable("UserTokens");
+            modelBuilder.Entity<ApplicationRole>().ToTable("Roles");
+            modelBuilder.Entity<UserTenantRole>().ToTable("UserRoles");
+            modelBuilder.Entity<Tenant>().ToTable("Tenants");
+            modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("UserClaims");
+            modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("UserLogins");
+            modelBuilder.Entity<IdentityRoleClaim<Guid>>().ToTable("RoleClaims");
+            modelBuilder.Entity<IdentityUserToken<Guid>>().ToTable("UserTokens");
+
+            modelBuilder.Entity<EmailVerificationToken>().ToTable("EmailVerificationTokens");
+            modelBuilder.Entity<PasswordResetToken>().ToTable("PasswordResetTokens");
+            modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens");
+            modelBuilder.Entity<PasswordResetToken>().ToTable("PasswordResetTokens");
+            modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens");
+            modelBuilder.Entity<UnlockUserToken>().ToTable("UnlockUserTokens");
+            modelBuilder.Entity<TenantInvite>().ToTable("TenantInvites");
         }
 
         private static void ConfigureUserEntity(ModelBuilder modelBuilder)
@@ -42,8 +94,6 @@ namespace Ona.Auth.Infrastructure.Data
 
         private static void ConfigureEmailVerificationTokenEntity(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<EmailVerificationToken>().ToTable("EmailVerificationTokens");
-
             modelBuilder.Entity<EmailVerificationToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
@@ -66,8 +116,6 @@ namespace Ona.Auth.Infrastructure.Data
 
         private static void ConfigureRefreshTokenEntity(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<RefreshToken>().ToTable("RefreshTokens");
-
             modelBuilder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
@@ -90,8 +138,6 @@ namespace Ona.Auth.Infrastructure.Data
 
         private static void ConfigurePasswordResetTokenEntity(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<PasswordResetToken>().ToTable("PasswordResetTokens");
-
             modelBuilder.Entity<PasswordResetToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
@@ -115,8 +161,6 @@ namespace Ona.Auth.Infrastructure.Data
 
         private static void ConfigureUnlockUserTokenEntity(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<UnlockUserToken>().ToTable("UnlockUserTokens");
-
             modelBuilder.Entity<UnlockUserToken>(entity =>
             {
                 entity.HasKey(rt => rt.Id);
@@ -136,6 +180,47 @@ namespace Ona.Auth.Infrastructure.Data
                     .HasPrincipalKey(u => u.Id)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+        }
+
+        private static void ConfigureUserTenantRole(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UserTenantRole>(b =>
+            {
+                b.HasKey(tr => new { tr.UserId, tr.RoleId, tr.TenantId });
+            });
+        }
+
+        private static void ConfigureTenantInviteEntity(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<TenantInvite>(entity =>
+            {
+                entity.HasKey(ti => ti.Id);
+
+                entity.HasIndex(ti => ti.Token).IsUnique();
+                entity.HasIndex(ti => ti.Email);
+                entity.HasIndex(ti => ti.TenantId);
+
+                entity.Property(ti => ti.Email).IsRequired();
+                entity.Property(ti => ti.Role).IsRequired();
+                entity.Property(ti => ti.Token).IsRequired();
+                entity.Property(ti => ti.ExpiresAt).IsRequired();
+                entity.Property(ti => ti.IsConsumed).HasDefaultValue(false);
+            });
+        }
+
+        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            this.SetTenantId(_currentTenant);
+            return base.SaveChangesAsync(cancellationToken);
+        }
+
+        private void SetTenantQueryFilter(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Tenant>().HasQueryFilter(e =>
+                (_currentTenant == null ||
+                !_currentTenant.Id.HasValue ||
+                e.Id == _currentTenant.Id.GetValueOrDefault()) &&
+                !e.IsDeleted);
         }
     }
 }

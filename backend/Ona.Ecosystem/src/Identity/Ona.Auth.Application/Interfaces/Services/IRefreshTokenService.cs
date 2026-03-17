@@ -4,6 +4,6 @@ namespace Ona.Auth.Application.Interfaces.Services
 {
     public interface IRefreshTokenService : ITokenService<RefreshToken>
     {
-        Task<RefreshToken> GenerateRefreshTokenAsync(string userId);
+        Task<RefreshToken> GenerateRefreshTokenAsync(Guid userId);
     }
 }

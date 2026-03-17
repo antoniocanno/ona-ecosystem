@@ -9,7 +9,7 @@
         public int RefreshTokenExpiryDays { get; set; } = 30;
         public int EmailVerificationTokenExpiryHours { get; set; } = 24;
         public int PasswordResetTokenExpiryHours { get; set; } = 2;
-        public AttemptSettings AttemptSettings { get; set; }
+        public AttemptSettings? AttemptSettings { get; set; }
     }
 
     public record AttemptSettings

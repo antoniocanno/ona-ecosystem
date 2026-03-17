@@ -1,10 +1,28 @@
 # Script para aplicar migrations no banco de dados
-# Uso: .\scripts\update-database.ps1
+# Uso: .\scripts\update-database.ps1 -Project "auth|commit"
 
-$projectPath = "./src/Identity/Ona.Auth.Infrastructure/Ona.Auth.Infrastructure.csproj"
-$startupProjectPath = "./src/Identity/Ona.Auth.API/Ona.Auth.API.csproj"
+param(
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("auth", "commit")]
+    [string]$Project = "auth"
+)
 
-Write-Host "Aplicando migrations no banco de dados..." -ForegroundColor Cyan
+$projectPath = ""
+$startupProjectPath = ""
+$context = ""
+
+if ($Project -eq "auth") {
+    $projectPath = "./src/Identity/Ona.Auth.Infrastructure/Ona.Auth.Infrastructure.csproj"
+    $startupProjectPath = "./src/Identity/Ona.Auth.API/Ona.Auth.API.csproj"
+    $context = "AuthDbContext"
+} else {
+    $projectPath = "./src/Apps/Commit/Ona.Commit.Infrastructure/Ona.Commit.Infrastructure.csproj"
+    $startupProjectPath = "./src/Apps/Commit/Ona.Commit.API/Ona.Commit.API.csproj"
+    $context = "CommitDbContext"
+}
+
+Write-Host "Projeto selecionado: $Project" -ForegroundColor Cyan
+Write-Host "Aplicando migrations para o contexto $context ..." -ForegroundColor Cyan
 Write-Host ""
 
 # Verifica se os projetos existem
@@ -23,7 +41,7 @@ Write-Host "Executando: dotnet ef database update ..." -ForegroundColor Yellow
 dotnet ef database update `
     --project $projectPath `
     --startup-project $startupProjectPath `
-    --context AuthDbContext
+    --context $context
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""
@@ -36,4 +54,3 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "   - A connection string esta configurada corretamente no appsettings.Development.json" -ForegroundColor White
     exit 1
 }
-

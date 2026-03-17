@@ -33,6 +33,7 @@ namespace Ona.Auth.Infrastructure.Extensions
                 options.Lockout.MaxFailedAccessAttempts = 5;
                 options.Lockout.AllowedForNewUsers = true;
             })
+            .AddRoles<ApplicationRole>()
             .AddEntityFrameworkStores<AuthDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
@@ -48,6 +49,11 @@ namespace Ona.Auth.Infrastructure.Extensions
 
             // Repositórios
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ITenantRepository, TenantRepository>();
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            services.AddScoped<IUserTenantRoleRepository, UserTenantRoleRepository>();
+            services.AddScoped<IApplicationRoleRepository, ApplicationRoleRepository>();
+            services.AddScoped<ITenantInviteRepository, TenantInviteRepository>();
 
             // Tokens
             services.AddTokenRepository<EmailVerificationToken>();

@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Shared\Ona.Infrastructure.Shared\Ona.Infrastructure.Shared.csproj" />
     <ProjectReference Include="..\Ona.Auth.Application\Ona.Auth.Application.csproj" />
     <ProjectReference Include="..\Ona.Auth.Domain\Ona.Auth.Domain.csproj" />
   </ItemGroup>

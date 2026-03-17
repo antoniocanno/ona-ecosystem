@@ -2,7 +2,7 @@
 using Ona.Auth.Application.Interfaces.Repositories;
 using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Domain.Entities;
-using Ona.Auth.Domain.Exceptions;
+using Ona.Core.Common.Exceptions;
 
 namespace Ona.Auth.Application.Services
 {
@@ -29,7 +29,7 @@ namespace Ona.Auth.Application.Services
             return storedToken;
         }
 
-        public async Task<T> CreateAsync(string userId, TimeSpan validityDuration, int tokenLength = 32)
+        public async Task<T> CreateAsync(Guid userId, TimeSpan validityDuration, int tokenLength = 32)
         {
             var token = new T
             {
@@ -60,12 +60,12 @@ namespace Ona.Auth.Application.Services
             }
         }
 
-        public async Task RevokeAllUserTokensAsync(string userId)
+        public async Task RevokeAllUserTokensAsync(Guid userId)
         {
             await _tokenRepository.RevokeAllUserTokensAsync(userId);
         }
 
-        public async Task<int> GetUserTokenCountAsync(string userId)
+        public async Task<int> GetUserTokenCountAsync(Guid userId)
         {
             return await _tokenRepository.GetUserTokenCountAsync(userId);
         }

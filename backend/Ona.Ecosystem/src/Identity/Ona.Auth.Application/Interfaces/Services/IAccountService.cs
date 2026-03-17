@@ -4,6 +4,6 @@
     {
         Task RequestPasswordResetAsync(string email);
         Task ResetPasswordAsync(string token, string newPassword);
-        Task ChangePasswordAsync(string userId, string currentPassword, string newPassword);
+        Task ChangePasswordAsync(string currentPassword, string newPassword);
     }
 }

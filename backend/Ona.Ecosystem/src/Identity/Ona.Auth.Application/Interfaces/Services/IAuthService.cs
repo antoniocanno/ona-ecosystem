@@ -1,4 +1,4 @@
-using Ona.Auth.Application.DTOs.Request;
+using Ona.Auth.Application.DTOs.Requests;
 using Ona.Auth.Application.DTOs.Responses;
 
 namespace Ona.Auth.Application.Interfaces.Services
@@ -12,6 +12,6 @@ namespace Ona.Auth.Application.Interfaces.Services
         Task VerifyEmailAsync(VerifyEmailRequest request);
         Task ResendVerificationEmailAsync(string email);
         Task LogoutAsync(string? refreshToken = null);
-        Task LogoutAllAsync(string userId);
+        Task LogoutAllAsync();
     }
 }

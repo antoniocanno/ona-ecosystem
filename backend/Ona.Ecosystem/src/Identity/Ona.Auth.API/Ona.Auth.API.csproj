@@ -8,17 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.0.1" />
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.0" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="System.Formats.Asn1" Version="8.0.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Ona.Auth.Application\Ona.Auth.Application.csproj" />
     <ProjectReference Include="..\Ona.Auth.Infrastructure\Ona.Auth.Infrastructure.csproj" />
     <ProjectReference Include="..\..\Orchestration\Ona.ServiceDefaults\Ona.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\Shared\Ona.Application.Shared\Ona.Application.Shared.csproj" />
   </ItemGroup>
 
 </Project>

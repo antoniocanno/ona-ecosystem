@@ -5,6 +5,8 @@ using Ona.Auth.Application.Interfaces.Services;
 using Ona.Auth.Application.Services;
 using Ona.Auth.Application.Settings;
 using Ona.Auth.Domain.Entities;
+using Ona.Auth.Domain.Interfaces.Services;
+using Ona.Auth.Domain.Services;
 
 namespace Ona.Auth.Application.Extensions
 {
@@ -24,9 +26,10 @@ namespace Ona.Auth.Application.Extensions
             // Services
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IUserAppService, UserService>();
+            services.AddScoped<IUserAppService, UserAppService>();
             services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+            services.AddScoped<ITenantService, TenantService>();
+            services.AddScoped<IUserDomainService, UserDomainService>();
 
             // Tokens
             services.AddTokenService<EmailVerificationToken>();

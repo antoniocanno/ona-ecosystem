@@ -1,11 +1,13 @@
-﻿using Ona.Core.Common.Helpers;
+﻿using Ona.Core.Common.Exceptions;
+using Ona.Core.Common.Helpers;
+using Ona.Core.Interfaces;
 
 namespace Ona.Auth.Domain.Entities
 {
-    public abstract class BaseToken
+    public abstract class BaseToken : IUserEntity
     {
         public Guid Id { get; private set; }
-        public string UserId { get; set; } = string.Empty;
+        public Guid UserId { get; set; }
         public string Token { get; set; } = string.Empty;
         public DateTime ExpiresAt { get; set; }
         public bool IsRevoked { get; set; }
@@ -19,6 +21,14 @@ namespace Ona.Auth.Domain.Entities
             Id = GuidGenerator.NewSequentialGuid();
             CreatedAt = DateTime.UtcNow;
             IsRevoked = false;
+        }
+
+        public void SetUserId(Guid userId)
+        {
+            if (userId == Guid.Empty)
+                throw new ValidationException("O token deve ter um usuário vinculado.");
+
+            UserId = userId;
         }
 
         public bool IsExpired => DateTime.UtcNow >= ExpiresAt;

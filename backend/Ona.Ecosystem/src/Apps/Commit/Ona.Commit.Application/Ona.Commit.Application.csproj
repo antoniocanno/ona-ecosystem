@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.Core" Version="1.8.22" />
+    <PackageReference Include="Mapster" Version="7.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Shared\Ona.Application.Shared\Ona.Application.Shared.csproj" />
+    <ProjectReference Include="..\..\..\Shared\Ona.Core\Ona.Core.csproj" />
+    <ProjectReference Include="..\Ona.Commit.Domain\Ona.Commit.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

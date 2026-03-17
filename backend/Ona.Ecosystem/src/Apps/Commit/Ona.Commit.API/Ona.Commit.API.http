@@ -1,0 +1,6 @@
+@Ona.Commit.API_HostAddress = http://localhost:5250
+
+GET {{Ona.Commit.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
