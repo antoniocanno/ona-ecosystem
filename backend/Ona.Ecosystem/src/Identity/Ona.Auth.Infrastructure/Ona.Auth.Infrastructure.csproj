@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.0.1" />
-    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.0.1" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.5.4" />
+    <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.5.4" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.22" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.11" />
