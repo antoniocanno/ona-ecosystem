@@ -4,16 +4,17 @@ Este diretório contém scripts auxiliares para gerenciar migrations do Entity F
 
 ## 🚀 Sistema Automatizado de Migrations
 
-O projeto está configurado para **aplicar migrations automaticamente** quando a aplicação é iniciada em modo `Development`. Isso significa que você **não precisa** executar `dotnet ef database update` manualmente ao iniciar a aplicação.
+O projeto aplica migrations automaticamente através do recurso **`migrations`** (`Ona.MigrationService`), registrado no AppHost. Ele roda **antes** das APIs e do worker Hangfire (`WaitForCompletion`) e aplica as migrations de `AuthDbContext` e `CommitDbContext`. Isso significa que você **não precisa** executar `dotnet ef database update` manualmente.
 
 ### Como Funciona
 
-1. **Ao iniciar a aplicação** (via AppHost ou diretamente):
-   - A aplicação verifica se há migrations pendentes
-   - Se houver, aplica automaticamente
-   - Logs informativos são exibidos no console
+1. **Ao iniciar o AppHost:**
+   - O Aspire sobe o PostgreSQL e espera ele ficar saudável
+   - O recurso `migrations` conecta, verifica migrations pendentes e aplica (`AuthDbContext`, depois `CommitDbContext`)
+   - Ao terminar, ele encerra; só então as APIs e o worker iniciam
+   - Logs informativos são exibidos no console do recurso `migrations`
 
-2. **Para criar novas migrations**, você ainda precisa executar o comando manualmente usando os scripts abaixo.
+2. **Para criar novas migrations**, execute o comando manualmente usando os scripts abaixo.
 
 ## 📝 Scripts Disponíveis
 
@@ -47,7 +48,7 @@ Aplica todas as migrations pendentes no banco de dados para o projeto selecionad
 .\scripts\update-database.ps1 -Project "auth|commit"
 ```
 
-> **Nota:** Normalmente não é necessário executar este script no Identity, pois as migrations são aplicadas automaticamente ao iniciar a aplicação em modo Development.
+> **Nota:** Normalmente não é necessário executar este script, pois o recurso `migrations` aplica tudo automaticamente ao subir o AppHost. Use-o apenas para aplicar migrations fora do Aspire (ex.: banco local).
 
 ### 3. Remover Última Migration
 
@@ -67,7 +68,7 @@ Remove a última migration criada (útil se você cometeu um erro).
    ```
 
 2. **Aplicar migrations:**
-   - Inicie o **AppHost** para aplicação automática:
+   - Inicie o **AppHost** — o recurso `migrations` aplica automaticamente:
      ```powershell
      dotnet run --project src/Orchestration/Ona.AppHost/Ona.AppHost.csproj
      ```
@@ -80,13 +81,13 @@ Remove a última migration criada (útil se você cometeu um erro).
 
 ### Connection Strings
 
-As connection strings devem estar configuradas nos respectivos projetos de API:
-- **Auth:** `src/Identity/Ona.Auth.API/appsettings.Development.json`
-- **Commit:** `src/Apps/Commit/Ona.Commit.API/appsettings.Development.json`
+Rodando via Aspire, as connection strings são injetadas automaticamente (`auth-db`, `commit-db`) — nenhum JSON precisa ser configurado.
 
-### Com .NET Aspire
+Para rodar os comandos `dotnet ef` fora do Aspire, os projetos de Infrastructure possuem **design-time factories** com uma connection string local padrão:
+- **Auth:** `AuthDbContextFactory` → `Host=localhost;Database=OnaAuth;...`
+- **Commit:** `CommitDbContextFactory` → `Host=localhost;Database=OnaCommit;...`
 
-Quando você executa o AppHost, as connection strings são injetadas automaticamente. Você não precisa configurar manualmente os arquivos JSON se estiver rodando via Aspire.
+Ajuste essas factories ou use `.\scripts\update-database.ps1` se precisar apontar para outro banco.
 
 ## 📋 Projetos Suportados
 
@@ -97,12 +98,17 @@ Quando você executa o AppHost, as connection strings são injetadas automaticam
 
 ## 🐛 Troubleshooting
 
+### Erro: `dotnet ef` não encontrado
+
+- Instale a ferramenta: `dotnet tool install --global dotnet-ef --version 8.0.22`
+
 ### Erro: "Host can't be null"
 
-- Verifique se a connection string está configurada corretamente no JSON do projeto de API correspondente.
+- Verifique a connection string da design-time factory do projeto de Infrastructure correspondente.
 - Certifique-se de que o PostgreSQL está rodando.
 
 ### Migrations não são aplicadas automaticamente
 
-- Verifique se está rodando em modo `Development`.
-- Verifique se o `AddServiceDefaults()` e `app.ApplyDatabaseMigrationsAsync()` (ou similar) estão presentes no `Program.cs` do seu projeto.
+- Verifique os logs do recurso `migrations` no dashboard do Aspire.
+- Confirme que as APIs/worker têm `.WaitForCompletion(migrations)` no `AppHost.cs`.
+- Confirme que os projetos de Infrastructure possuem migrations (`Migrations/`).

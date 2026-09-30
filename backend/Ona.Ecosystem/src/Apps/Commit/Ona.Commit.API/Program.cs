@@ -1,6 +1,5 @@
 using Hangfire;
 using Hangfire.PostgreSql;
-using Ona.Commit.API.Extensions;
 using Ona.Commit.Infrastructure.Data;
 using Ona.Commit.Infrastructure.Extensions;
 using Ona.Commit.Infrastructure.Gateways.Evolution.Consumers;
@@ -10,7 +9,7 @@ namespace Ona.Commit.API
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -49,8 +48,6 @@ namespace Ona.Commit.API
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                await app.ApplyDatabaseMigrationsAsync();
-
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI();

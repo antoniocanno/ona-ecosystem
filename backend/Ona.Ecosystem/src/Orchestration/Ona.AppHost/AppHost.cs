@@ -31,9 +31,15 @@ var rabbitMq = builder.AddRabbitMQ("rabbitmq", userName: rabbitUser, password: r
                       .WithManagementPlugin();
 
 // --- Container da Evolution API ---
-var evolution = builder.AddEvolutionApi(postgres, password, redis, rabbitMq);
+var evolution = builder.AddEvolutionApi(evolutionDb, redis, rabbitMq);
 var evolutionApi = evolution.Container;
 var evolutionApiKey = evolution.ApiKey;
+
+// --- Migrations (executa antes das APIs/worker) ---
+var migrations = builder.AddProject<Projects.Ona_MigrationService>("migrations")
+                        .WithReference(authDb)
+                        .WithReference(commitDb)
+                        .WaitFor(postgres);
 
 // --- Projetos .NET ---
 var authApi = builder.AddProject<Projects.Ona_Auth_API>("ona-auth-api")
@@ -45,9 +51,8 @@ var authApi = builder.AddProject<Projects.Ona_Auth_API>("ona-auth-api")
                      .WithReference(authDb)
                      .WithReference(redis)
                      .WithReference(rabbitMq)
-                     .WaitFor(postgres)
-                     .WaitFor(rabbitMq)
-                     .WaitFor(postgres);
+                     .WaitForCompletion(migrations)
+                     .WaitFor(rabbitMq);
 
 builder.AddProject<Projects.Ona_Commit_Worker_Hangfire>("ona-commit-worker-hangfire")
                     .WithReference(commitDb)
@@ -56,7 +61,7 @@ builder.AddProject<Projects.Ona_Commit_Worker_Hangfire>("ona-commit-worker-hangf
                     .WithEnvironment("Auth:InternalApiKey", internalApiKey)
                     .WithEnvironment("Cryptography:Key", cryptographyKey)
                     .WithReference(rabbitMq)
-                    .WaitFor(postgres)
+                    .WaitForCompletion(migrations)
                     .WaitFor(rabbitMq)
                     .WaitFor(evolutionApi);
 
@@ -72,7 +77,7 @@ builder.AddProject<Projects.Ona_Commit_API>("ona-commit-api")
                        .WithEnvironment("WhatsApp:Evolution:ApiKey", evolutionApiKey)
                        .WithReference(redis)
                        .WithReference(rabbitMq)
-                       .WaitFor(postgres)
+                       .WaitForCompletion(migrations)
                        .WaitFor(rabbitMq);
 
 builder.Build().Run();

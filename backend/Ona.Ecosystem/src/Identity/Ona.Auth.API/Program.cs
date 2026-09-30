@@ -1,5 +1,4 @@
-﻿using Ona.Auth.API.Extensions;
-using Ona.Auth.API.Middlewares;
+﻿using Ona.Auth.API.Middlewares;
 using Ona.Auth.Application.Extensions;
 using Ona.Auth.Application.Services;
 using Ona.Auth.Infrastructure.Data;
@@ -11,7 +10,7 @@ namespace Ona.Auth.API
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -42,8 +41,6 @@ namespace Ona.Auth.API
 
             if (app.Environment.IsDevelopment())
             {
-                await app.ApplyDatabaseMigrationsAsync();
-
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
                 app.UseSwaggerUI();

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Ona.MigrationService-6b2f0d2e-3c51-4d2a-9f1e-6f2a8c4b7d10</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.5.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.22">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ona.ServiceDefaults\Ona.ServiceDefaults.csproj" />
+    <ProjectReference Include="..\..\Identity\Ona.Auth.Infrastructure\Ona.Auth.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Apps\Commit\Ona.Commit.Infrastructure\Ona.Commit.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -6,8 +6,7 @@ public static class EvolutionApiExtensions
 
     public static EvolutionApiResource AddEvolutionApi(
         this IDistributedApplicationBuilder builder,
-        IResourceBuilder<IResourceWithConnectionString> postgres,
-        IResourceBuilder<ParameterResource> pgPassword,
+        IResourceBuilder<PostgresDatabaseResource> postgresDb,
         IResourceBuilder<RedisResource> redis,
         IResourceBuilder<RabbitMQServerResource> rabbitMq)
     {
@@ -37,10 +36,6 @@ public static class EvolutionApiExtensions
         var rabbitMqEventsConnectionUpdate = builder.AddParameter("RabbitMq-Events-ConnectionUpdate");
         var rabbitMqEventsMessagesUpsert = builder.AddParameter("RabbitMq-Events-MessagesUpsert");
 
-        // --- URIs de Conexão ---
-        var evolutionPostgresUri = ReferenceExpression.Create(
-            $"postgresql://postgres:{pgPassword}@postgres:5432/evolution-db?schema=public");
-
         // --- Container da Evolution API ---
         var container = builder.AddContainer("evolution-api", "atendai/evolution-api:v2.2.3")
             .WithEnvironment("AUTHENTICATION_TYPE", "apikey")
@@ -51,16 +46,16 @@ public static class EvolutionApiExtensions
             // Configuração de Banco de Dados (Postgres)
             .WithEnvironment("DATABASE_ENABLED", evolutionDbEnabled)
             .WithEnvironment("DATABASE_PROVIDER", evolutionDbProvider)
-            .WithEnvironment("DATABASE_CONNECTION_URI", evolutionPostgresUri)
+            .WithEnvironment("DATABASE_CONNECTION_URI", postgresDb.Resource.ConnectionStringExpression)
             .WithEnvironment("DATABASE_CONNECTION_CLIENT_NAME", evolutionDbClientName)
 
             // Configuração de Cache (Redis)
             .WithEnvironment("CACHE_REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("CACHE_REDIS_URI", ReferenceExpression.Create($"redis://{redis.Resource.Name}:6379"))
+            .WithEnvironment("CACHE_REDIS_URI", redis.Resource.ConnectionStringExpression)
             .WithEnvironment("CACHE_REDIS_PREFIX_KEY", evolutionCacheRedisPrefixKey)
             .WithEnvironment("CACHE_REDIS_SAVE_INSTANCES", evolutionCacheRedisSaveInstances)
             .WithEnvironment("REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("REDIS_URI", ReferenceExpression.Create($"redis://{redis.Resource.Name}:6379"))
+            .WithEnvironment("REDIS_URI", redis.Resource.ConnectionStringExpression)
             .WithEnvironment("CACHE_LOCAL_ENABLED", evolutionCacheLocalEnabled)
 
             // Flags de Persistência
@@ -78,7 +73,7 @@ public static class EvolutionApiExtensions
 
             // Configuração RabbitMQ
             .WithEnvironment("RABBITMQ_ENABLED", rabbitMqEnabled)
-            .WithEnvironment("RABBITMQ_URI", ReferenceExpression.Create($"amqp://{rabbitMq.Resource.Name}:5672"))
+            .WithEnvironment("RABBITMQ_URI", rabbitMq.Resource.ConnectionStringExpression)
             .WithEnvironment("RABBITMQ_EXCHANGE_NAME", rabbitMqExchange)
             .WithEnvironment("RABBITMQ_GLOBAL_ENABLED", rabbitMqGlobalEnabled)
             .WithEnvironment("RABBITMQ_EVENTS_CONNECTION_UPDATE", rabbitMqEventsConnectionUpdate)
@@ -86,7 +81,7 @@ public static class EvolutionApiExtensions
 
             .WithHttpEndpoint(targetPort: 8080, name: "api")
             .WithReference(rabbitMq)
-            .WaitFor(postgres)
+            .WaitFor(postgresDb)
             .WaitFor(redis)
             .WaitFor(rabbitMq);
 

@@ -148,7 +148,9 @@ cd ona-ecosystem
 
 **2. Configure os secrets**
 
-O projeto usa User Secrets do .NET. Configure no AppHost:
+O AppHost usa parâmetros externos. Se algum valor não estiver definido, o dashboard do Aspire exibe **Unresolved parameters → Enter values** no primeiro `run`; marque **Save to user secret** para persistir.
+
+Alternativamente, defina via User Secrets (ou `aspire secret set "Parameters:..." "..."`):
 
 ```bash
 cd backend/Ona.Ecosystem
@@ -168,11 +170,17 @@ dotnet run --project src/Orchestration/Ona.AppHost/Ona.AppHost.csproj
 
 O Aspire vai provisionar PostgreSQL (`auth-db`, `commit-db`, `evolution-db`), Redis, RabbitMQ e o container da Evolution API, depois iniciar as APIs e o worker Hangfire. O dashboard de observabilidade abre automaticamente — a URL aparece no terminal (geralmente `https://localhost:17225`).
 
-> Migrations do EF Core são aplicadas automaticamente em modo `Development`.
+> Migrations do EF Core são aplicadas automaticamente pelo recurso `migrations` (`Ona.MigrationService`), que roda **antes** das APIs e do worker (`WaitForCompletion`).
 
 ---
 
 ## Scripts de Migration
+
+Requer o `dotnet-ef`:
+
+```bash
+dotnet tool install --global dotnet-ef --version 8.0.22
+```
 
 Scripts PowerShell para gerenciamento de migrations:
 
