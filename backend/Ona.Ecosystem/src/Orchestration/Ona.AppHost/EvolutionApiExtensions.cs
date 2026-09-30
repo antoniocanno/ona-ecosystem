@@ -37,7 +37,7 @@ public static class EvolutionApiExtensions
         var rabbitMqEventsMessagesUpsert = builder.AddParameter("RabbitMq-Events-MessagesUpsert");
 
         // --- Container da Evolution API ---
-        var container = builder.AddContainer("evolution-api", "atendai/evolution-api:v2.2.3")
+        var container = builder.AddContainer("evolution-api", "evoapicloud/evolution-api:v2.2.3")
             .WithEnvironment("AUTHENTICATION_TYPE", "apikey")
             .WithEnvironment("AUTHENTICATION_API_KEY", evolutionApiKey)
             .WithEnvironment("SERVER_URL", evolutionApiUrl)
@@ -46,16 +46,16 @@ public static class EvolutionApiExtensions
             // Configuração de Banco de Dados (Postgres)
             .WithEnvironment("DATABASE_ENABLED", evolutionDbEnabled)
             .WithEnvironment("DATABASE_PROVIDER", evolutionDbProvider)
-            .WithEnvironment("DATABASE_CONNECTION_URI", postgresDb.Resource.ConnectionStringExpression)
+            .WithEnvironment("DATABASE_CONNECTION_URI", postgresDb.Resource.UriExpression)
             .WithEnvironment("DATABASE_CONNECTION_CLIENT_NAME", evolutionDbClientName)
 
             // Configuração de Cache (Redis)
             .WithEnvironment("CACHE_REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("CACHE_REDIS_URI", redis.Resource.ConnectionStringExpression)
+            .WithEnvironment("CACHE_REDIS_URI", redis.Resource.UriExpression)
             .WithEnvironment("CACHE_REDIS_PREFIX_KEY", evolutionCacheRedisPrefixKey)
             .WithEnvironment("CACHE_REDIS_SAVE_INSTANCES", evolutionCacheRedisSaveInstances)
             .WithEnvironment("REDIS_ENABLED", evolutionCacheRedisEnabled)
-            .WithEnvironment("REDIS_URI", redis.Resource.ConnectionStringExpression)
+            .WithEnvironment("REDIS_URI", redis.Resource.UriExpression)
             .WithEnvironment("CACHE_LOCAL_ENABLED", evolutionCacheLocalEnabled)
 
             // Flags de Persistência
